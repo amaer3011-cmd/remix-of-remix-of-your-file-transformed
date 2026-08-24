@@ -58,9 +58,13 @@ const ROUTER_SCRIPT = `
 </script>
 `;
 
-const html = studymateHtml.includes("</body>")
-  ? studymateHtml.replace("</body>", ROUTER_SCRIPT + "</body>")
-  : studymateHtml + ROUTER_SCRIPT;
+const closeIdx = studymateHtml.lastIndexOf("</body>");
+const html =
+  closeIdx === -1
+    ? studymateHtml + ROUTER_SCRIPT
+    : studymateHtml.slice(0, closeIdx) +
+      ROUTER_SCRIPT +
+      studymateHtml.slice(closeIdx);
 
 export function studymateResponse() {
   return new Response(html, {
