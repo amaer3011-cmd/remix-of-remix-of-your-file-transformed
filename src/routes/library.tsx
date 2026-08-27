@@ -5,7 +5,7 @@ import { studymateResponse } from "../lib/studymate-page";
 export const Route = createFileRoute("/library")({
   server: {
     handlers: {
-      GET: () => studymateResponse(),
+      GET: () => studymateResponse("/library"),
     },
   },
 });

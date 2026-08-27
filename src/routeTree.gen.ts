@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExplainRouteImport } from './routes/explain'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SummaryRouteImport } from './routes/summary'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SummaryRoute = SummaryRouteImport.update({
   id: '/summary',
   path: '/summary',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explain' | '/library' | '/summary'
+  fullPaths: '/' | '/explain' | '/library' | '/sitemap.xml' | '/summary'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explain' | '/library' | '/summary'
-  id: '__root__' | '/' | '/explain' | '/library' | '/summary'
+  to: '/' | '/explain' | '/library' | '/sitemap.xml' | '/summary'
+  id: '__root__' | '/' | '/explain' | '/library' | '/sitemap.xml' | '/summary'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExplainRoute: typeof ExplainRoute
   LibraryRoute: typeof LibraryRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SummaryRoute: typeof SummaryRoute
 }
 
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/summary': {
       id: '/summary'
       path: '/summary'
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExplainRoute: ExplainRoute,
   LibraryRoute: LibraryRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SummaryRoute: SummaryRoute,
 }
 export const routeTree = rootRouteImport
