@@ -2456,6 +2456,19 @@ const VISUAL_DIAGRAMS_SECTION = `
 - لا تستخدم صور خارجية (<img src="http...">) لتمثيل أي رسم توضيحي — كل رسم لازم يكون SVG مكتوب بالكامل جوه الملف نفسه، عشان الملف يفضل شغال ذاتيًا بدون إنترنت.
 - حدِّد عدد الرسومات من احتياج المحتوى الفعلي (ممكن محور واحد يحتاج رسمين، ومحور تاني ما يحتاجش رسم خالص لو طبيعته نصية بحتة زي تعريف بسيط) — لا تفرض رسمًا في كل صفحة بالتساوي بشكل تعسفي.`;
 
+const DESIGN_EXCELLENCE_SECTION = `
+## مستوى الإتقان البصري (إلزامي — الملف لازم يبقى مبهر بصريًا مش مجرد مرتب)
+- كل صفحة لازم تحس إنها مصممة بإيد مصمم نشر محترف، مش مستند عادي: توازن واضح بين الفراغ والمحتوى، وتدرّج هرمي بصري قوي (العنوان الرئيسي ← الفرعي ← المتن ← الملاحظات).
+- استخدم نظام طبقات لوني ثابت من ألوان الهوية: خلفية ورقية فاتحة، سطوح بطاقات بيضاء، حدود ذهبية رفيعة، وأكسنت نبيذي/أخضر للعناصر المهمة — بدون ألوان عشوائية خارج اللوحة.
+- عناوين الأقسام داخل شرائط مميزة (شريط بلون نبيذي أو تدرّج خفيف مع رقم القسم في شارة دائرية/مربعة ذهبية وأيقونة رمزية مناسبة)، مش مجرد نص عريض.
+- استخدم فواصل زخرفية بين الأقسام الكبيرة (خط متدرج مع رمز زخرفي في المنتصف مثل ✦) بدل الانتقال المباشر.
+- صناديق المحتوى متنوعة الوظيفة بصريًا: صندوق "تعريف" بشارة 📖، "قاعدة" بشارة ⚖️، "مثال" بشارة ✏️، "تحذير/خطأ شائع" بشارة ⚠️ بلون تحذيري هادئ، "معلومة مهمة" بشارة 💡 — كل نوع له لون أكسنت مميز من نفس اللوحة.
+- أضف لمسات تفصيلية صغيرة ترفع الإحساس بالجودة: حد علوي ملوّن رفيع أعلى كل بطاقة، ظل ناعم جدًا (box-shadow خفيف)، زوايا مدوّرة متسقة (10–14px)، ومسافات داخلية سخية.
+- الغلاف: طبقات إطارات متداخلة (إطار خارجي سميك + إطار داخلي ذهبي رفيع) مع زخرفة ركنية بسيطة، وعنوان بخط زخرفي كبير متمركز، وسطر زخرفي تحته.
+- اتساق تام: نفس نمط البطاقات والعناوين والفواصل يتكرر في كل الصفحات بدون تغيير عشوائي في الشكل بين صفحة وأخرى.
+- ممنوع العناصر الفارغة أو نصف الفارغة، وممنوع صفحة فيها سطر أو سطرين فقط — وازن توزيع المحتوى على الصفحات.
+`;
+
 function buildExplanationPrompt(source, opts, chunkInfo) {
   // نجهّز قيم البراند كمتغيرات عادية (Escaped وليست معقوفة/الأقواس مباشرة) قبل بناء أي
   // template literal طويل، عشان نتجنب تكرار نفس تعبير الـ interpolation (opts.brandName || '...')
@@ -2507,6 +2520,7 @@ ${opts.identityRef ? IDENTITY_REF_COLOR_INSTRUCTION(opts.identityRef) : opts.des
 - تعداد نقطي مميز (مربع مدوَّر بزاوية 45 درجة أو نجمة أو ما شابه، بدلًا من النقطة العادية) يُستخدم في القوائم المرقّمة.
 - اتجاه الصفحة (RTL أو LTR) ونظام الأرقام في كل العناصر (lang/dir على <html> والترقيم) لازم يكونا متوافقين تمامًا مع لغة المحتوى الفعلية المكتشفة — راجع قسم "لغة المحتوى الناتج" أعلاه (مش RTL/أرقام عربية-هندية إجباريًا).
 ${PRINT_QUALITY_SECTION}
+${DESIGN_EXCELLENCE_SECTION}
 ${opts.identityRef && opts.identityRef.type === 'html' ? `\n## مرجع الهوية البصرية (كود HTML/CSS من ملف قديم — انسخ الهوية منه بدقة)\nفيما يلي أنماط CSS وعيّنة من بنية HTML مأخوذة من ملف قديم، وهي المرجع الإلزامي الوحيد لهوية هذا الملف البصرية (الألوان، الخطوط، أشكال الصناديق، التعداد النقطي، الترويسة...). لا تخترع هوية بديلة، والتزم بنفس روح متغيرات CSS والخطوط الظاهرة هنا بقدر الإمكان (مع تعديل بسيط للتباين لو احتاج الأمر فقط):\n\`\`\`\n${escapeForPromptCodeBlock(opts.identityRef.styleText)}\n\`\`\`\n` : ''}
 ${layoutSection}
 
@@ -2657,6 +2671,7 @@ ${FACTUAL_ACCURACY_SECTION}
 ${opts.identityRef ? IDENTITY_REF_COLOR_INSTRUCTION(opts.identityRef) : '- نظام ألوان بسيط ومناسب لمادة المحتوى (فيزياء أزرق، كيمياء أخضر، أحياء بنفسجي، رياضيات كحلي، عربي ذهبي، إنجليزي تركواز، أو لوحة تناسب الموضوع لو مادة تانية). عرّف الألوان كمتغيرات CSS (:root{--x:#...}) بتباين كافٍ للقراءة.'}
 - زر عائم صغير "💾 حفظ كـ PDF" يستدعي window.print()، يختفي في @media print.
 ${PRINT_QUALITY_SECTION}
+${DESIGN_EXCELLENCE_SECTION}
 - نظام الأرقام (عربية-هندية أو عادية) يتبع لغة المحتوى المكتشفة، زي ما هو موضّح في قسم "لغة المحتوى الناتج".
 - لو المحتوى فيه فكرة مركزية واحدة تستفيد فعليًا من تمثيل بصري (عملية قصيرة، تسلسل زمني بسيط، مقارنة بين مفهومين، تركيب بسيط)، أضف رسم توضيحي واحد بصيغة SVG خام مضمّن (viewBox مناسب، ألوان من نفس لوحة الملف، تسميات بنفس لغة المحتوى) — من غير ما تثقل الصفحة الواحدة بأكتر من رسم أو رسمين كحد أقصى.
 ${extras.length ? '\n## تعليمات إضافية\n' + extras.join('\n') : ''}
@@ -4277,11 +4292,12 @@ function buildQuizExportHtml(quiz) {
       return `<div class="opt${isCorrect ? ' is-correct' : ''}"><span class="opt-letter">${letters[idx] || idx + 1}</span><span class="opt-text">${escapeHtml(opt)}</span>${isCorrect ? ' <span class="check-mark">✓</span>' : ''}</div>`;
     }).join('');
     const explainHtml = withAnswers ? `<div class="explain"><strong>الشرح:</strong> ${escapeHtml(q.explanation || '')}</div>` : '';
+    const diffCls = /سهل/.test(q.difficulty || '') ? ' tag-diff-easy' : /صعب/.test(q.difficulty || '') ? ' tag-diff-hard' : q.difficulty ? ' tag-diff-mid' : '';
     const tagsHtml = withAnswers ? `
       <div class="tags">
-        ${q.difficulty ? `<span class="tag">${escapeHtml(q.difficulty)}</span>` : ''}
-        ${q.cognitive_level ? `<span class="tag">${escapeHtml(q.cognitive_level)}</span>` : ''}
-        ${q.concept ? `<span class="tag">${escapeHtml(q.concept)}</span>` : ''}
+        ${q.difficulty ? `<span class="tag${diffCls}">◈ ${escapeHtml(q.difficulty)}</span>` : ''}
+        ${q.cognitive_level ? `<span class="tag">🧠 ${escapeHtml(q.cognitive_level)}</span>` : ''}
+        ${q.concept ? `<span class="tag tag-concept">📌 ${escapeHtml(q.concept)}</span>` : ''}
       </div>` : '';
     return `<div class="q-block">
       <div class="q-text"><span class="q-num">${i + 1}</span>${escapeHtml(q.question)}</div>
@@ -4331,7 +4347,12 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 
 /* ===== الورقة ===== */
 .sheets{display:flex;flex-direction:column;align-items:center;gap:20px}
-.sheet{width:var(--pw);height:var(--ph);padding:var(--pm);background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.09);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sheet{width:var(--pw);height:var(--ph);padding:var(--pm);background:
+  radial-gradient(600px 300px at 85% -5%, rgba(217,164,65,.08), transparent 60%),
+  radial-gradient(500px 260px at 10% 105%, rgba(110,20,35,.05), transparent 60%),
+  var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.09);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sheet::before{content:"";position:absolute;inset:4.5mm;border:1px solid rgba(217,164,65,.35);border-radius:4px;pointer-events:none;z-index:0}
+.sheet::after{content:"";position:absolute;top:0;right:0;left:0;height:3.5mm;background:linear-gradient(90deg,var(--wine) 0%,var(--gold) 30%,var(--gold2) 50%,var(--gold) 70%,var(--wine) 100%);pointer-events:none}
 .sheet-head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:7px;margin-bottom:10px;border-bottom:1.5px solid var(--gold);font-size:11.5px;font-weight:800;color:var(--wine)}
 .sheet-head .sh-title{color:#4A4038;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
 .sheet-body{flex:1 1 auto;overflow:hidden}
@@ -4343,7 +4364,8 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 .doc-header::after{content:"";position:absolute;inset:5px;border:1px solid rgba(217,164,65,.55);border-radius:10px;pointer-events:none}
 .doc-brand{position:relative;font-weight:900;color:var(--wine);font-size:14.5px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .doc-brand span{color:#9C7A2E;font-weight:700;font-size:12.5px}
-.doc-header h1{position:relative;margin:12px 0 8px;font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:26px;line-height:1.5;color:var(--wine2);text-align:center}
+.doc-header h1{position:relative;margin:12px 0 8px;font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:27px;line-height:1.5;color:var(--wine2);text-align:center}
+.doc-header h1::after{content:"";display:block;width:110px;height:3px;margin:10px auto 2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--gold) 25%,var(--gold) 75%,transparent)}
 .doc-meta{position:relative;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);font-weight:700}
 .doc-meta span{background:#F6F1DF;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
 .name-line{position:relative;display:flex;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--gold);font-size:13.5px;font-weight:700;color:#4A4038}
@@ -4351,16 +4373,23 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 /* ===== الأسئلة ===== */
 .q-block{position:relative;background:#fff;border:1px solid var(--line);border-right:5px solid var(--gold);border-radius:12px;padding:12px 15px;margin-bottom:10px;box-shadow:0 3px 10px rgba(0,0,0,.035)}
 .q-text{font-weight:800;font-size:15px;line-height:1.85;display:flex;gap:10px;align-items:flex-start}
-.q-num{flex-shrink:0;width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;box-shadow:0 2px 6px rgba(110,20,35,.28)}
+.q-num{flex-shrink:0;width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;box-shadow:0 2px 6px rgba(110,20,35,.28);outline:2px solid rgba(217,164,65,.35);outline-offset:2px}
 .opts{margin:10px 0 0 0;padding-right:37px}
 .opt{display:flex;align-items:center;gap:9px;padding:7px 12px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:13.8px;line-height:1.7;background:#FFFDF8}
-.opt.is-correct{border-color:var(--green);background:#EEFAF1;font-weight:800}
+.opt.is-correct{border-color:var(--green);background:linear-gradient(180deg,#F2FBF4,#E8F7EC);font-weight:800;box-shadow:inset 0 0 0 1px rgba(47,125,79,.18)}
 .opt-letter{width:22px;height:22px;border-radius:50%;background:#F3F0D8;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
 .opt.is-correct .opt-letter{background:var(--green);color:#fff;border-color:var(--green)}
-.check-mark{color:var(--green);font-weight:900;margin-inline-start:auto}
-.explain{margin:10px 37px 0 0;background:#FFF6DC;border:1px solid var(--gold);border-radius:10px;padding:9px 13px;font-size:12.8px;line-height:1.8}
+.check-mark{color:var(--green);font-weight:900;margin-inline-start:auto;width:21px;height:21px;border-radius:50%;background:#fff;border:1.5px solid var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.explain{margin:10px 37px 0 0;background:linear-gradient(180deg,#FFF9E6,#FFF4D4);border:1px solid var(--gold);border-right:4px solid var(--gold);border-radius:10px;padding:9px 13px;font-size:12.8px;line-height:1.8}
+.explain strong{color:var(--wine)}
 .tags{margin:9px 37px 0 0;display:flex;gap:6px;flex-wrap:wrap}
 .tag{font-size:11px;font-weight:700;background:#F3F0D8;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:#4A4038}
+.tag-diff-easy{background:#EAF6EE;border-color:#BFE3CC;color:#236B42}
+.tag-diff-mid{background:#FDF3DC;border-color:#EAD08F;color:#8A6410}
+.tag-diff-hard{background:#FBEAEA;border-color:#EFC3C3;color:#8C1D2F}
+.tag-concept{background:#EFEAF7;border-color:#D3C6EA;color:#4C3A78}
+.divider{display:flex;align-items:center;gap:10px;margin:4px 0 14px;color:var(--gold);font-size:13px}
+.divider::before,.divider::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 #srcQ,#srcA{position:absolute;visibility:hidden;pointer-events:none;top:0;right:-99999px;width:calc(var(--pw) - (var(--pm) * 2))}
 
 /* ===== إعدادات الطباعة ===== */
@@ -4405,10 +4434,12 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 
 <div id="srcQ">
   ${header('نسخة الأسئلة — بدون إجابات')}
+  <div class="divider">✦</div>
   ${renderQuestions(false)}
 </div>
 <div id="srcA">
   ${header('نسخة الإجابات — مجابة بالكامل')}
+  <div class="divider">✦</div>
   ${renderQuestions(true)}
 </div>
 <div class="sheets" id="sheets"></div>
