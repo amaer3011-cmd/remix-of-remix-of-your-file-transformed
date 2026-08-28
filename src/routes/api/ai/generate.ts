@@ -151,29 +151,23 @@ export const Route = createFileRoute("/api/ai/generate")({
           );
         }
 
-        let lastStatus = 503;
+        const outcome = await runFallbackChain({
+          geminiKeys: gKeys,
+          openRouterKeys: oKeys,
+          geminiModel: model,
+          callGemini: (key, m) => callGemini(key, body, m),
+          callOpenRouter: (key, m) => callOpenRouter(key, m, body),
+          onFailure: (label, status, error) =>
+            console.error("ai fallback failed", label, status, error.slice(0, 300)),
+        });
 
-        for (const key of gKeys) {
-          const r = await callGemini(key, body, model);
-          if (r.ok) return Response.json({ text: r.text, provider: "gemini" });
-          lastStatus = r.status;
-          console.error("gemini failed", r.status, r.error.slice(0, 300));
-        }
-
-        for (const orModel of OPENROUTER_MODELS) {
-          for (const key of oKeys) {
-            const r = await callOpenRouter(key, orModel, body);
-            if (r.ok)
-              return Response.json({ text: r.text, provider: orModel });
-            lastStatus = r.status;
-            console.error("openrouter failed", orModel, r.status, r.error.slice(0, 300));
-          }
-        }
+        if (outcome.ok)
+          return Response.json({ text: outcome.text, provider: outcome.provider });
 
         return Response.json(
           {
             error:
-              lastStatus === 429
+              outcome.status === 429
                 ? "الخدمة مزدحمة حاليًا، حاول تاني بعد شوية."
                 : "تعذّر توليد المحتوى حاليًا. حاول مرة تانية.",
           },
