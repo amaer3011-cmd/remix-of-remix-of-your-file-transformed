@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { runFallbackChain } from "@/lib/ai-fallback";
 
 /* ============================================================
    Thanawiyah🎯 — بوابة الذكاء الاصطناعي (backend فقط)
