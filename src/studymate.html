@@ -4277,11 +4277,12 @@ function buildQuizExportHtml(quiz) {
       return `<div class="opt${isCorrect ? ' is-correct' : ''}"><span class="opt-letter">${letters[idx] || idx + 1}</span><span class="opt-text">${escapeHtml(opt)}</span>${isCorrect ? ' <span class="check-mark">✓</span>' : ''}</div>`;
     }).join('');
     const explainHtml = withAnswers ? `<div class="explain"><strong>الشرح:</strong> ${escapeHtml(q.explanation || '')}</div>` : '';
+    const diffCls = /سهل/.test(q.difficulty || '') ? ' tag-diff-easy' : /صعب/.test(q.difficulty || '') ? ' tag-diff-hard' : q.difficulty ? ' tag-diff-mid' : '';
     const tagsHtml = withAnswers ? `
       <div class="tags">
-        ${q.difficulty ? `<span class="tag">${escapeHtml(q.difficulty)}</span>` : ''}
-        ${q.cognitive_level ? `<span class="tag">${escapeHtml(q.cognitive_level)}</span>` : ''}
-        ${q.concept ? `<span class="tag">${escapeHtml(q.concept)}</span>` : ''}
+        ${q.difficulty ? `<span class="tag${diffCls}">◈ ${escapeHtml(q.difficulty)}</span>` : ''}
+        ${q.cognitive_level ? `<span class="tag">🧠 ${escapeHtml(q.cognitive_level)}</span>` : ''}
+        ${q.concept ? `<span class="tag tag-concept">📌 ${escapeHtml(q.concept)}</span>` : ''}
       </div>` : '';
     return `<div class="q-block">
       <div class="q-text"><span class="q-num">${i + 1}</span>${escapeHtml(q.question)}</div>
@@ -4348,7 +4349,8 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 .doc-header::after{content:"";position:absolute;inset:5px;border:1px solid rgba(217,164,65,.55);border-radius:10px;pointer-events:none}
 .doc-brand{position:relative;font-weight:900;color:var(--wine);font-size:14.5px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .doc-brand span{color:#9C7A2E;font-weight:700;font-size:12.5px}
-.doc-header h1{position:relative;margin:12px 0 8px;font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:26px;line-height:1.5;color:var(--wine2);text-align:center}
+.doc-header h1{position:relative;margin:12px 0 8px;font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:27px;line-height:1.5;color:var(--wine2);text-align:center}
+.doc-header h1::after{content:"";display:block;width:110px;height:3px;margin:10px auto 2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--gold) 25%,var(--gold) 75%,transparent)}
 .doc-meta{position:relative;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);font-weight:700}
 .doc-meta span{background:#F6F1DF;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
 .name-line{position:relative;display:flex;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--gold);font-size:13.5px;font-weight:700;color:#4A4038}
