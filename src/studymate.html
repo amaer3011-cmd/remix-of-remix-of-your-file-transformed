@@ -4314,20 +4314,32 @@ function buildQuizExportHtml(quiz) {
 :root{
   --wine:#6E1423;--wine2:#8C1D2F;--gold:#D9A441;--gold2:#F3DFAE;
   --paper:#FFFDF6;--ink:#241A1E;--muted:#6B6258;--line:#E7E0CC;--green:#2F7D4F;
+  --pw:210mm;--ph:297mm;--pm:14mm;
 }
 body{font-family:'Cairo',Tahoma,sans-serif;background:
   radial-gradient(1200px 600px at 50% -10%, #efe9db, transparent),
-  #f3f1ea;color:var(--ink);margin:0;padding:26px 12px 70px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.toolbar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;max-width:760px;margin:0 auto 24px;box-shadow:0 8px 26px rgba(0,0,0,.08)}
+  #f3f1ea;color:var(--ink);margin:0;padding:22px 12px 70px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.toolbar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:22px;padding:10px 14px;max-width:900px;margin:0 auto 24px;box-shadow:0 8px 26px rgba(0,0,0,.08)}
 .toolbar button{font-family:inherit;font-weight:800;font-size:13.5px;border:1px solid var(--gold);background:#fffdf6;color:var(--wine);border-radius:999px;padding:8px 16px;cursor:pointer;transition:.15s}
 .toolbar button:hover{background:#fff6dc}
 .toolbar button.active{background:var(--wine2);color:#fff;border-color:var(--wine2)}
 .toolbar button.primary{background:var(--gold);color:var(--ink);border-color:var(--gold)}
-.doc{max-width:790px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px 34px;box-shadow:0 14px 40px rgba(0,0,0,.07);position:relative}
-.doc::before{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(217,164,65,.35)}
+.tb-group{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--muted)}
+.tb-group select{font-family:inherit;font-weight:800;font-size:12.5px;color:var(--wine);background:#fffdf6;border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer}
+.tb-sep{width:1px;height:22px;background:var(--line)}
+.tb-info{font-size:12.5px;font-weight:800;color:var(--muted)}
+
+/* ===== الورقة ===== */
+.sheets{display:flex;flex-direction:column;align-items:center;gap:20px}
+.sheet{width:var(--pw);height:var(--ph);padding:var(--pm);background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.09);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sheet-head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:7px;margin-bottom:10px;border-bottom:1.5px solid var(--gold);font-size:11.5px;font-weight:800;color:var(--wine)}
+.sheet-head .sh-title{color:#4A4038;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.sheet-body{flex:1 1 auto;overflow:hidden}
+.sheet-foot{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:7px;margin-top:10px;border-top:1px dashed var(--gold);font-size:11px;font-weight:700;color:var(--muted)}
+.sheet-foot b{color:var(--wine);font-weight:900}
 
 /* ===== رأس المستند ===== */
-.doc-header{position:relative;margin-bottom:22px;padding:16px 18px 14px;border:2px solid var(--wine);border-radius:14px;background:linear-gradient(180deg,#fff8e9,#fffdf6)}
+.doc-header{position:relative;margin-bottom:16px;padding:16px 18px 14px;border:2px solid var(--wine);border-radius:14px;background:linear-gradient(180deg,#fff8e9,#fffdf6)}
 .doc-header::after{content:"";position:absolute;inset:5px;border:1px solid rgba(217,164,65,.55);border-radius:10px;pointer-events:none}
 .doc-brand{position:relative;font-weight:900;color:var(--wine);font-size:14.5px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .doc-brand span{color:#9C7A2E;font-weight:700;font-size:12.5px}
@@ -4337,78 +4349,143 @@ body{font-family:'Cairo',Tahoma,sans-serif;background:
 .name-line{position:relative;display:flex;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--gold);font-size:13.5px;font-weight:700;color:#4A4038}
 
 /* ===== الأسئلة ===== */
-.q-block{position:relative;background:#fff;border:1px solid var(--line);border-right:5px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 3px 10px rgba(0,0,0,.035)}
-.q-text{font-weight:800;font-size:15.5px;line-height:1.9;display:flex;gap:10px;align-items:flex-start}
-.q-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;box-shadow:0 2px 6px rgba(110,20,35,.28)}
-.opts{margin:12px 0 0 0;padding-right:38px}
-.opt{display:flex;align-items:center;gap:9px;padding:8px 13px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:7px;font-size:14px;line-height:1.7;background:#FFFDF8}
+.q-block{position:relative;background:#fff;border:1px solid var(--line);border-right:5px solid var(--gold);border-radius:12px;padding:12px 15px;margin-bottom:10px;box-shadow:0 3px 10px rgba(0,0,0,.035)}
+.q-text{font-weight:800;font-size:15px;line-height:1.85;display:flex;gap:10px;align-items:flex-start}
+.q-num{flex-shrink:0;width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;box-shadow:0 2px 6px rgba(110,20,35,.28)}
+.opts{margin:10px 0 0 0;padding-right:37px}
+.opt{display:flex;align-items:center;gap:9px;padding:7px 12px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:13.8px;line-height:1.7;background:#FFFDF8}
 .opt.is-correct{border-color:var(--green);background:#EEFAF1;font-weight:800}
 .opt-letter{width:22px;height:22px;border-radius:50%;background:#F3F0D8;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
 .opt.is-correct .opt-letter{background:var(--green);color:#fff;border-color:var(--green)}
 .check-mark{color:var(--green);font-weight:900;margin-inline-start:auto}
-.explain{margin:12px 0 0 0;margin-right:38px;background:#FFF6DC;border:1px solid var(--gold);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.85;position:relative}
-.tags{margin:10px 38px 0 0;display:flex;gap:6px;flex-wrap:wrap}
+.explain{margin:10px 37px 0 0;background:#FFF6DC;border:1px solid var(--gold);border-radius:10px;padding:9px 13px;font-size:12.8px;line-height:1.8}
+.tags{margin:9px 37px 0 0;display:flex;gap:6px;flex-wrap:wrap}
 .tag{font-size:11px;font-weight:700;background:#F3F0D8;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:#4A4038}
-.no-print{}
+#srcQ,#srcA{position:absolute;visibility:hidden;pointer-events:none;top:0;right:-99999px;width:calc(var(--pw) - (var(--pm) * 2))}
 
-/* ===== إعدادات الطباعة: منع تقطيع النص بين الصفحات ===== */
-@page{size:A4;margin:14mm 13mm 16mm}
+/* ===== إعدادات الطباعة ===== */
+@page{size:A4;margin:0}
 @media print{
-  .toolbar{display:none!important}
-  body{background:#fff;padding:0}
-  .doc{border:none;box-shadow:none;border-radius:0;max-width:none;padding:0}
-  .doc::before{display:none}
-  .doc + .doc{break-before:page;page-break-before:always}
-
-  /* لا تُقسَّم هذه العناصر أبدًا بين صفحتين */
-  .q-block,.opt,.explain,.tags,.name-line,.doc-header{
+  .toolbar,#srcQ,#srcA{display:none!important}
+  body{background:#fff;padding:0;margin:0}
+  .sheets{gap:0}
+  .sheet{box-shadow:none;border:none;border-radius:0;margin:0;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .q-block,.opt,.explain,.tags,.name-line,.doc-header,.opts,.katex-display,img,table,figure{
     break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
   }
-  .opts{break-inside:avoid;page-break-inside:avoid}
-  .q-text{break-after:avoid;page-break-after:avoid}
-  .doc-header{break-after:avoid;page-break-after:avoid}
-  /* منع الأسطر اليتيمة */
+  .q-text,.doc-header{break-after:avoid;page-break-after:avoid}
   p,li,.q-text,.explain{orphans:3;widows:3}
-  .q-block{box-shadow:none;margin-bottom:8px;padding:10px 13px;background:#fff}
-  .opt{padding:6px 11px;margin-bottom:5px}
-  .opts{margin-top:9px}
-  .katex-display{break-inside:avoid;page-break-inside:avoid}
-  img,table,figure{break-inside:avoid;page-break-inside:avoid;max-width:100%}
+  .q-block{box-shadow:none;background:#fff}
 }
 </style>
 </head>
 <body>
 <div class="toolbar no-print">
-  <button id="tabQ" class="active">📝 نسخة الأسئلة (بدون إجابات)</button>
-  <button id="tabA">✅ نسخة الإجابات (مجابة)</button>
+  <button id="tabQ" class="active">📝 نسخة الأسئلة</button>
+  <button id="tabA">✅ نسخة الإجابات</button>
+  <span class="tb-sep"></span>
+  <span class="tb-group">حجم الورق
+    <select id="paperSel">
+      <option value="a4" selected>A4 (210×297)</option>
+      <option value="letter">Letter (216×279)</option>
+    </select>
+  </span>
+  <span class="tb-group">الهوامش
+    <select id="marginSel">
+      <option value="10">ضيّقة (10mm)</option>
+      <option value="14" selected>عادية (14mm)</option>
+      <option value="20">واسعة (20mm)</option>
+    </select>
+  </span>
+  <span class="tb-sep"></span>
+  <span class="tb-info" id="pageInfo">—</span>
   <button id="printBtn" class="primary">🖨 حفظ / طباعة PDF</button>
 </div>
-<div class="doc" id="questionsVersion">
+
+<div id="srcQ">
   ${header('نسخة الأسئلة — بدون إجابات')}
   ${renderQuestions(false)}
 </div>
-<div class="doc" id="answersVersion" style="display:none">
+<div id="srcA">
   ${header('نسخة الإجابات — مجابة بالكامل')}
   ${renderQuestions(true)}
 </div>
+<div class="sheets" id="sheets"></div>
+
 <script>
-function showVersion(v){
-  document.getElementById('questionsVersion').style.display = v === 'q' ? '' : 'none';
-  document.getElementById('answersVersion').style.display = v === 'a' ? '' : 'none';
+var DOC_TITLE = ${JSON.stringify(quiz.title || 'اختبار')};
+var PAPERS = { a4: { w: 210, h: 297, css: 'A4' }, letter: { w: 216, h: 279, css: 'Letter' } };
+var state = { version: 'q', paper: 'a4', margin: 14 };
+var pageStyle = document.createElement('style');
+document.head.appendChild(pageStyle);
+
+function makeSheet(){
+  var s = document.createElement('div');
+  s.className = 'sheet';
+  s.innerHTML = '<div class="sheet-head"><span>المتميزون 🌟</span><span class="sh-title"></span></div>'
+    + '<div class="sheet-body"></div>'
+    + '<div class="sheet-foot"><span>' + (state.version === 'a' ? 'نسخة الإجابات' : 'نسخة الأسئلة') + '</span>'
+    + '<span>صفحة&nbsp;<b class="pn"></b>&nbsp;من&nbsp;<b class="pt"></b></span></div>';
+  s.querySelector('.sh-title').textContent = DOC_TITLE;
+  return s;
+}
+
+function paginate(){
+  var p = PAPERS[state.paper] || PAPERS.a4;
+  document.documentElement.style.setProperty('--pw', p.w + 'mm');
+  document.documentElement.style.setProperty('--ph', p.h + 'mm');
+  document.documentElement.style.setProperty('--pm', state.margin + 'mm');
+  pageStyle.textContent = '@page{size:' + p.css + ';margin:0}';
+
+  var src = document.getElementById(state.version === 'a' ? 'srcA' : 'srcQ');
+  var blocks = Array.prototype.slice.call(src.children);
+  var host = document.getElementById('sheets');
+  host.innerHTML = '';
+
+  var sheet = makeSheet(); host.appendChild(sheet);
+  var body = sheet.querySelector('.sheet-body');
+  for (var i = 0; i < blocks.length; i++){
+    var node = blocks[i].cloneNode(true);
+    body.appendChild(node);
+    if (body.scrollHeight > body.clientHeight + 1){
+      if (body.children.length === 1) continue; // كتلة أكبر من الصفحة: تُترك كما هي
+      body.removeChild(node);
+      sheet = makeSheet(); host.appendChild(sheet);
+      body = sheet.querySelector('.sheet-body');
+      body.appendChild(node);
+    }
+  }
+  var sheets = host.querySelectorAll('.sheet');
+  for (var j = 0; j < sheets.length; j++){
+    sheets[j].querySelector('.pn').textContent = String(j + 1);
+    sheets[j].querySelector('.pt').textContent = String(sheets.length);
+  }
+  document.getElementById('pageInfo').textContent = sheets.length + ' صفحة · ' + p.css;
+}
+
+function setVersion(v){
+  state.version = v;
   document.getElementById('tabQ').classList.toggle('active', v === 'q');
   document.getElementById('tabA').classList.toggle('active', v === 'a');
+  paginate();
 }
-document.getElementById('tabQ').addEventListener('click', function(){ showVersion('q'); });
-document.getElementById('tabA').addEventListener('click', function(){ showVersion('a'); });
+document.getElementById('tabQ').addEventListener('click', function(){ setVersion('q'); });
+document.getElementById('tabA').addEventListener('click', function(){ setVersion('a'); });
+document.getElementById('paperSel').addEventListener('change', function(e){ state.paper = e.target.value; paginate(); });
+document.getElementById('marginSel').addEventListener('change', function(e){ state.margin = parseInt(e.target.value, 10) || 14; paginate(); });
 document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
-try {
-  if (window.renderMathInElement) {
-    renderMathInElement(document.body, {
-      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
-      throwOnError: false
-    });
-  }
-} catch (e) {}
+
+function renderMath(){
+  try {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.getElementById('srcQ'), { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+      renderMathInElement(document.getElementById('srcA'), { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+    }
+  } catch (e) {}
+}
+function boot(){ renderMath(); paginate(); }
+if (document.fonts && document.fonts.ready) { document.fonts.ready.then(boot).catch(boot); } else { window.addEventListener('load', boot); }
 <\/script>
 </body>
 </html>`;
