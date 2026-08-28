@@ -15,6 +15,7 @@ import { Route as ExplainRouteImport } from './routes/explain'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SummaryRouteImport } from './routes/summary'
+import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const SummaryRoute = SummaryRouteImport.update({
   path: '/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiGenerateRoute = ApiAiGenerateRouteImport.update({
+  id: '/api/ai/generate',
+  path: '/api/ai/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
+  '/api/ai/generate': typeof ApiAiGenerateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
+  '/api/ai/generate': typeof ApiAiGenerateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +79,27 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/summary': typeof SummaryRoute
+  '/api/ai/generate': typeof ApiAiGenerateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/explain' | '/library' | '/sitemap.xml' | '/summary'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/explain'
+    | '/library'
+    | '/sitemap.xml'
+    | '/summary'
+    | '/api/ai/generate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/explain' | '/library' | '/sitemap.xml' | '/summary'
+  to:
+    | '/'
+    | '/$'
+    | '/explain'
+    | '/library'
+    | '/sitemap.xml'
+    | '/summary'
+    | '/api/ai/generate'
   id:
     | '__root__'
     | '/'
@@ -85,6 +108,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/sitemap.xml'
     | '/summary'
+    | '/api/ai/generate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +118,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SummaryRoute: typeof SummaryRoute
+  ApiAiGenerateRoute: typeof ApiAiGenerateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -140,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/generate': {
+      id: '/api/ai/generate'
+      path: '/api/ai/generate'
+      fullPath: '/api/ai/generate'
+      preLoaderRoute: typeof ApiAiGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -150,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SummaryRoute: SummaryRoute,
+  ApiAiGenerateRoute: ApiAiGenerateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
