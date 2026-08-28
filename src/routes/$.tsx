@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { NotFoundPage, notFoundMeta } from "@/components/NotFoundPage";
-import { markNotFound } from "@/lib/not-found.functions";
+import { notFoundResponse } from "@/lib/not-found-page";
 
 export const Route = createFileRoute("/$")({
-  loader: async () => {
-    await markNotFound();
-    return null;
+  server: {
+    handlers: {
+      GET: () => notFoundResponse(),
+    },
   },
   head: () => ({ meta: notFoundMeta }),
   component: NotFoundPage,
