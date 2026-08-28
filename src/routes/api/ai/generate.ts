@@ -11,16 +11,6 @@ import type {} from "@tanstack/react-start";
 
 const GEMINI_MODEL = "gemini-3.6-flash";
 
-const OPENROUTER_MODELS = [
-  "qwen/qwen3-235b-a22b",
-  "qwen/qwen3-30b-a3b",
-  "deepseek/deepseek-chat",
-  "deepseek/deepseek-r1",
-  "nvidia/nemotron-nano-3.5-lightning",
-  "minimax/minimax-m2",
-  "laguna/laguna-s-2.1",
-] as const;
-
 type GeminiPart = {
   text?: string;
   inline_data?: { mime_type: string; data: string };
