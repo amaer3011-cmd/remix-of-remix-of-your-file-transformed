@@ -75,25 +75,25 @@ export interface PageSeo {
 export const PAGES: PageSeo[] = [
   {
     path: "/",
-    title: "StudyMate — إنشاء اختبارات تفاعلية بالذكاء الاصطناعي",
+    title: "Thanawiyah🎯 — إنشاء اختبارات تفاعلية بالذكاء الاصطناعي",
     description:
       "حوّل ملازمك ونصوصك إلى اختبارات تفاعلية فورية بالذكاء الاصطناعي، مع تحكم في الصعوبة وعدد الأسئلة ونتائج مفصّلة.",
   },
   {
     path: "/explain",
-    title: "إنشاء شرح تفاعلي للدروس | StudyMate",
+    title: "إنشاء شرح تفاعلي للدروس | Thanawiyah🎯",
     description:
       "أنشئ ملزمة شرح تفاعلية منسّقة من أي نص أو ملف، بصفحات ووضع تركيز وتعديل ذكي بالذكاء الاصطناعي.",
   },
   {
     path: "/summary",
-    title: "إنشاء ملخصات دراسية سريعة | StudyMate",
+    title: "إنشاء ملخصات دراسية سريعة | Thanawiyah🎯",
     description:
       "لخّص محاضراتك وملفاتك في نقاط واضحة ومنظمة خلال ثوانٍ، وجهّزها للمراجعة قبل الامتحان.",
   },
   {
     path: "/library",
-    title: "مكتبتي — اختباراتي وملخصاتي المحفوظة | StudyMate",
+    title: "مكتبتي — اختباراتي وملخصاتي المحفوظة | Thanawiyah🎯",
     description:
       "ارجع لكل الاختبارات وملازم الشرح والملخصات المحفوظة في مكتبتك، وتابع نتائجك ومراجعاتك.",
   },
@@ -113,7 +113,7 @@ function buildHead(page: PageSeo) {
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "StudyMate",
+    name: "Thanawiyah🎯",
     url: page.path,
     applicationCategory: "EducationalApplication",
     inLanguage: "ar",
@@ -124,7 +124,7 @@ function buildHead(page: PageSeo) {
   return `
 <meta name="description" content="${d}">
 <link rel="canonical" href="${escapeAttr(page.path)}">
-<meta property="og:site_name" content="StudyMate">
+<meta property="og:site_name" content="Thanawiyah🎯">
 <meta property="og:locale" content="ar_AR">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${t}">
