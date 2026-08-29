@@ -58,12 +58,62 @@ const ROUTER_SCRIPT = `
 </script>
 `;
 
+
+const TRACK_SCRIPT = `
+<script>
+(function () {
+  try {
+    var KEY = "thn_sid";
+    var sid = sessionStorage.getItem(KEY);
+    if (!sid) {
+      sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      sessionStorage.setItem(KEY, sid);
+    }
+    var start = Date.now();
+    var sent = {};
+    function send(path, duration) {
+      try {
+        fetch("/api/public/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            path: path,
+            session_id: sid,
+            referrer: document.referrer || null,
+            duration_ms: duration || null
+          })
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    function track() {
+      var path = location.pathname || "/";
+      if (sent[path]) return;
+      sent[path] = true;
+      send(path, null);
+    }
+    track();
+    var push = history.pushState;
+    history.pushState = function () {
+      push.apply(this, arguments);
+      setTimeout(track, 0);
+    };
+    window.addEventListener("popstate", function () { setTimeout(track, 0); });
+    window.addEventListener("pagehide", function () {
+      send(location.pathname || "/", Date.now() - start);
+    });
+  } catch (e) {}
+})();
+</script>
+`;
+
 const closeIdx = studymateHtml.lastIndexOf("</body>");
 const baseHtml =
   closeIdx === -1
-    ? studymateHtml + ROUTER_SCRIPT
+    ? studymateHtml + ROUTER_SCRIPT + TRACK_SCRIPT
     : studymateHtml.slice(0, closeIdx) +
       ROUTER_SCRIPT +
+      TRACK_SCRIPT +
       studymateHtml.slice(closeIdx);
 
 export interface PageSeo {
