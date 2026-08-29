@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExplainRouteImport } from './routes/explain'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SummaryRouteImport } from './routes/summary'
 import { Route as ApiAiGenerateRouteImport } from './routes/api/ai/generate'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
@@ -49,6 +50,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SummaryRoute = SummaryRouteImport.update({
   id: '/summary',
   path: '/summary',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/summary': typeof SummaryRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/summary': typeof SummaryRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/summary': typeof SummaryRoute
   '/api/ai/generate': typeof ApiAiGenerateRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/explain'
     | '/library'
     | '/sitemap.xml'
+    | '/stats'
     | '/summary'
     | '/api/ai/generate'
     | '/api/public/track'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/explain'
     | '/library'
     | '/sitemap.xml'
+    | '/stats'
     | '/summary'
     | '/api/ai/generate'
     | '/api/public/track'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/explain'
     | '/library'
     | '/sitemap.xml'
+    | '/stats'
     | '/summary'
     | '/api/ai/generate'
     | '/api/public/track'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   ExplainRoute: typeof ExplainRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StatsRoute: typeof StatsRoute
   SummaryRoute: typeof SummaryRoute
   ApiAiGenerateRoute: typeof ApiAiGenerateRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/summary': {
       id: '/summary'
       path: '/summary'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExplainRoute: ExplainRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StatsRoute: StatsRoute,
   SummaryRoute: SummaryRoute,
   ApiAiGenerateRoute: ApiAiGenerateRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
