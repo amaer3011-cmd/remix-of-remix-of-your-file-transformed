@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExplainRouteImport } from './routes/explain'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -26,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplainRoute = ExplainRouteImport.update({
@@ -62,6 +68,7 @@ const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auth': typeof AuthRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auth': typeof AuthRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auth': typeof AuthRoute
   '/explain': typeof ExplainRoute
   '/library': typeof LibraryRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/auth'
     | '/explain'
     | '/library'
     | '/sitemap.xml'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/auth'
     | '/explain'
     | '/library'
     | '/sitemap.xml'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/auth'
     | '/explain'
     | '/library'
     | '/sitemap.xml'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  AuthRoute: typeof AuthRoute
   ExplainRoute: typeof ExplainRoute
   LibraryRoute: typeof LibraryRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explain': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  AuthRoute: AuthRoute,
   ExplainRoute: ExplainRoute,
   LibraryRoute: LibraryRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
