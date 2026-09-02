@@ -4862,6 +4862,10 @@ function renderLibrary() {
         e.stopPropagation();
         downloadQuizFile(entry);
       });
+      card.querySelector('[data-act="download-i"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadInteractiveQuizFile(entry);
+      });
     }
     card.querySelector('[data-act="del"]').addEventListener('click', (e) => {
       e.stopPropagation();
