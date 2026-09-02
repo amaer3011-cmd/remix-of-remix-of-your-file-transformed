@@ -1023,7 +1023,8 @@ html,body{overflow-x:hidden}
         <div class="result-sub" id="resultSub"></div>
         <div class="result-actions">
           <button class="btn-chip primary" id="retakeBtn">🔁 إعادة الاختبار</button>
-          <button class="btn-chip" id="downloadQuizBtn">⬇️ تحميل الاختبار</button>
+          <button class="btn-chip" id="downloadQuizBtn">⬇️ تحميل للطباعة</button>
+          <button class="btn-chip" id="downloadQuizInteractiveBtn">🧩 تحميل تفاعلي (HTML)</button>
           <button class="btn-chip" id="newQuizBtn">➕ اختبار جديد</button>
         </div>
       </div>
@@ -4536,9 +4537,244 @@ function downloadQuizFile(quiz) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+/* =========================================================
+   تحميل الاختبار كملف HTML تفاعلي (حل + تصحيح تلقائي + مراجعة)
+   ========================================================= */
+function buildInteractiveQuizHtml(quiz) {
+  const data = JSON.stringify({
+    id: quiz.id || String(Date.now()),
+    title: quiz.title || 'اختبار',
+    difficulty: quiz.difficulty || '',
+    createdAt: quiz.createdAt || Date.now(),
+    questions: (quiz.questions || []).map(q => ({
+      question: q.question,
+      options: q.options || [],
+      correct_index: q.correct_index,
+      explanation: q.explanation || '',
+      difficulty: q.difficulty || '',
+      cognitive_level: q.cognitive_level || '',
+      concept: q.concept || '',
+      source_evidence: q.source_evidence || ''
+    }))
+  }).replace(/</g, '\\u003c');
+
+  return `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(quiz.title || 'اختبار')} — اختبار تفاعلي | Thanawiyah🎯</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
+*{box-sizing:border-box}
+:root{--wine:#6E1423;--wine2:#8C1D2F;--gold:#D9A441;--gold2:#F3DFAE;--paper:#FFFDF6;--ink:#241A1E;--muted:#6B6258;--line:#E7E0CC;--green:#2F7D4F;--red:#B33A3A}
+body{margin:0;font-family:'Cairo',Tahoma,sans-serif;color:var(--ink);background:radial-gradient(1200px 600px at 50% -10%,#efe9db,transparent),#f3f1ea;padding:18px 12px 60px}
+.wrap{max-width:820px;margin:0 auto}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.08);padding:20px;position:relative;overflow:hidden}
+.card::after{content:"";position:absolute;top:0;right:0;left:0;height:5px;background:linear-gradient(90deg,var(--wine),var(--gold) 35%,var(--gold2) 50%,var(--gold) 65%,var(--wine))}
+h1{font-family:'Lalezar','Cairo',sans-serif;font-weight:400;color:var(--wine2);font-size:26px;line-height:1.5;margin:6px 0 6px;text-align:center}
+.brand{font-weight:900;color:var(--wine);font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.brand span{color:#9C7A2E;font-weight:700;font-size:12.5px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.meta span{background:#F6F1DF;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+.bar{height:8px;border-radius:999px;background:#eee6cf;overflow:hidden;margin:14px 0 6px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--wine),var(--gold));transition:width .25s}
+.count{font-size:12.5px;font-weight:800;color:var(--muted);display:flex;justify-content:space-between}
+.q{font-weight:800;font-size:17px;line-height:1.9;margin:16px 0 12px;display:flex;gap:10px}
+.qn{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:right;font-family:inherit;font-size:15px;line-height:1.7;padding:11px 14px;margin-bottom:9px;border:1.6px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;transition:.15s}
+.opt:hover{border-color:var(--gold);background:#FFFBF0}
+.opt.sel{border-color:var(--wine2);background:#FBF1F2;font-weight:800}
+.opt.ok{border-color:var(--green);background:#EFF9F2;font-weight:800}
+.opt.bad{border-color:var(--red);background:#FBEFEF;font-weight:800}
+.ltr{width:24px;height:24px;border-radius:50%;background:#F3F0D8;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.opt.sel .ltr{background:var(--wine2);color:#fff;border-color:var(--wine2)}
+.opt.ok .ltr{background:var(--green);color:#fff;border-color:var(--green)}
+.opt.bad .ltr{background:var(--red);color:#fff;border-color:var(--red)}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+button.btn{font-family:inherit;font-weight:800;font-size:14px;border:1px solid var(--gold);background:#fffdf6;color:var(--wine);border-radius:999px;padding:10px 20px;cursor:pointer;transition:.15s}
+button.btn:hover{background:#FFF4D8}
+button.btn.primary{background:var(--wine2);color:#fff;border-color:var(--wine2)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.hide{display:none!important}
+.ring{width:130px;height:130px;border-radius:50%;margin:6px auto 12px;background:conic-gradient(var(--gold) calc(var(--pct)*1%),#eee6cf 0);display:flex;align-items:center;justify-content:center}
+.ring div{width:100px;height:100px;border-radius:50%;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring strong{font-size:26px;color:var(--wine)}
+.ring small{color:var(--muted);font-weight:700}
+.rtitle{text-align:center;font-weight:900;font-size:19px;color:var(--wine2)}
+.rsub{text-align:center;color:var(--muted);font-weight:700;margin-top:4px}
+.rev{background:#fff;border:1px solid var(--line);border-right:5px solid var(--green);border-radius:14px;padding:14px 16px;margin-top:12px;box-shadow:0 3px 10px rgba(0,0,0,.035)}
+.rev.wrong{border-right-color:var(--red)}
+.rev .rq{font-weight:800;font-size:15.5px;line-height:1.85;margin-bottom:10px}
+.rev .ro{display:flex;gap:8px;padding:7px 12px;border:1.4px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:14px}
+.rev .ro.ok{border-color:var(--green);background:#F2FBF4;font-weight:800}
+.rev .ro.bad{border-color:var(--red);background:#FBEFEF;font-weight:800}
+.exp{margin-top:9px;background:linear-gradient(180deg,#FFF9E6,#FFF4D4);border:1px solid var(--gold);border-right:4px solid var(--gold);border-radius:10px;padding:10px 13px;font-size:13.5px;line-height:1.85}
+.exp strong{color:var(--wine)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.tag{font-size:11px;font-weight:700;background:#F3F0D8;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:#4A4038}
+.foot{text-align:center;color:var(--muted);font-size:12px;font-weight:700;margin-top:22px}
+@media print{.actions,.bar,.count{display:none!important}body{background:#fff;padding:0}.card,.rev{box-shadow:none;break-inside:avoid;page-break-inside:avoid}}
+@media(max-width:520px){h1{font-size:21px}.q{font-size:15.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="brand">المتميزون <span>نجتهد لنوفق 🌟</span></div>
+    <h1 id="title"></h1>
+    <div class="meta" id="meta"></div>
+
+    <div id="quizArea">
+      <div class="bar"><i id="prog"></i></div>
+      <div class="count"><span id="cnt"></span><span id="answered"></span></div>
+      <div class="q"><span class="qn" id="qn"></span><span id="qtext"></span></div>
+      <div id="opts"></div>
+      <div class="actions">
+        <button class="btn" id="prevBtn">السابق</button>
+        <button class="btn primary" id="nextBtn">التالي</button>
+        <button class="btn primary hide" id="submitBtn">تسليم الاختبار ✓</button>
+      </div>
+    </div>
+
+    <div id="resultArea" class="hide">
+      <div class="ring" id="ring"><div><strong id="pct"></strong><small>النتيجة</small></div></div>
+      <div class="rtitle" id="rtitle"></div>
+      <div class="rsub" id="rsub"></div>
+      <div class="actions">
+        <button class="btn primary" id="retakeBtn">🔁 إعادة الاختبار</button>
+        <button class="btn" id="printBtn">🖨️ طباعة / PDF</button>
+      </div>
+    </div>
+  </div>
+  <div id="review"></div>
+  <div class="foot">تم إنشاء هذا الاختبار بواسطة Thanawiyah🎯 — يعمل بدون إنترنت</div>
+</div>
+<script>
+var QUIZ = ${data};
+var L = ['أ','ب','ج','د','هـ','و'];
+var answers = new Array(QUIZ.questions.length).fill(null);
+var cur = 0, done = false;
+var SKEY = 'thn_quiz_' + QUIZ.id;
+function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+function $(id){return document.getElementById(id);}
+try{var saved=JSON.parse(localStorage.getItem(SKEY)||'null');if(saved&&saved.answers&&saved.answers.length===answers.length){answers=saved.answers;}}catch(e){}
+function save(){try{localStorage.setItem(SKEY,JSON.stringify({answers:answers,ts:Date.now()}));}catch(e){}}
+
+$('title').textContent = QUIZ.title;
+$('meta').innerHTML = '<span>' + QUIZ.questions.length + ' سؤال</span>' + (QUIZ.difficulty ? '<span>' + esc(QUIZ.difficulty) + '</span>' : '') + '<span>' + new Date(QUIZ.createdAt).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'}) + '</span>';
+document.title = QUIZ.title + ' — اختبار تفاعلي';
+
+function math(sel){try{if(window.renderMathInElement){renderMathInElement(document.querySelector(sel),{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});}}catch(e){}}
+
+function render(){
+  var q = QUIZ.questions[cur];
+  $('qn').textContent = cur + 1;
+  $('qtext').textContent = q.question;
+  $('cnt').textContent = 'سؤال ' + (cur + 1) + ' من ' + QUIZ.questions.length;
+  var n = answers.filter(function(a){return a !== null;}).length;
+  $('answered').textContent = 'تمت الإجابة: ' + n + '/' + QUIZ.questions.length;
+  $('prog').style.width = ((cur + 1) / QUIZ.questions.length * 100) + '%';
+  var html = '';
+  (q.options || []).forEach(function(o, i){
+    html += '<button class="opt' + (answers[cur] === i ? ' sel' : '') + '" data-i="' + i + '"><span class="ltr">' + (L[i] || (i + 1)) + '</span><span>' + esc(o) + '</span></button>';
+  });
+  $('opts').innerHTML = html;
+  Array.prototype.forEach.call($('opts').querySelectorAll('.opt'), function(b){
+    b.addEventListener('click', function(){ answers[cur] = parseInt(b.getAttribute('data-i'), 10); save(); render(); });
+  });
+  $('prevBtn').disabled = cur === 0;
+  var last = cur === QUIZ.questions.length - 1;
+  $('nextBtn').classList.toggle('hide', last);
+  $('submitBtn').classList.toggle('hide', !last);
+  math('#quizArea');
+}
+$('prevBtn').addEventListener('click', function(){ if (cur > 0){ cur--; render(); } });
+$('nextBtn').addEventListener('click', function(){ if (cur < QUIZ.questions.length - 1){ cur++; render(); } });
+$('submitBtn').addEventListener('click', grade);
+$('retakeBtn').addEventListener('click', function(){
+  answers = new Array(QUIZ.questions.length).fill(null); cur = 0; done = false; save();
+  $('resultArea').classList.add('hide'); $('quizArea').classList.remove('hide'); $('review').innerHTML = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' }); render();
+});
+$('printBtn').addEventListener('click', function(){ window.print(); });
+
+function grade(){
+  var missing = answers.filter(function(a){return a === null;}).length;
+  if (missing && !confirm('فيه ' + missing + ' سؤال من غير إجابة. تسلّم برضه؟')) return;
+  done = true;
+  var correct = 0;
+  QUIZ.questions.forEach(function(q, i){ if (answers[i] === q.correct_index) correct++; });
+  var pct = Math.round(correct / QUIZ.questions.length * 100);
+  $('quizArea').classList.add('hide');
+  $('resultArea').classList.remove('hide');
+  $('ring').style.setProperty('--pct', pct);
+  $('pct').textContent = pct + '%';
+  $('rtitle').textContent = pct >= 85 ? 'أداء ممتاز! 🎉' : pct >= 60 ? 'أداء كويس، فيه مجال تتحسن 💪' : 'محتاج تراجع الموضوع تاني 📖';
+  $('rsub').textContent = 'إجبت صح على ' + correct + ' من ' + QUIZ.questions.length + ' سؤال';
+  var out = '';
+  QUIZ.questions.forEach(function(q, i){
+    var ok = answers[i] === q.correct_index;
+    var opts = '';
+    (q.options || []).forEach(function(o, idx){
+      var cls = idx === q.correct_index ? ' ok' : (idx === answers[i] ? ' bad' : '');
+      opts += '<div class="ro' + cls + '"><span>' + (L[idx] || (idx + 1)) + '.</span><span>' + esc(o) + '</span>' + (idx === q.correct_index ? '<span>✓</span>' : (idx === answers[i] ? '<span>✗</span>' : '')) + '</div>';
+    });
+    var tags = '';
+    [q.difficulty, q.cognitive_level, q.concept].forEach(function(t){ if (t) tags += '<span class="tag">' + esc(t) + '</span>'; });
+    out += '<div class="rev' + (ok ? '' : ' wrong') + '">' +
+      '<div class="rq">' + (i + 1) + '. ' + esc(q.question) + ' ' + (ok ? '✅' : (answers[i] === null ? '⚪ (لم تُجب)' : '❌')) + '</div>' +
+      opts +
+      (q.explanation ? '<div class="exp"><strong>الشرح:</strong> ' + esc(q.explanation) + '</div>' : '') +
+      (q.source_evidence ? '<div class="exp"><strong>الدليل من المصدر:</strong> ' + esc(q.source_evidence) + '</div>' : '') +
+      (tags ? '<div class="tags">' + tags + '</div>' : '') +
+    '</div>';
+  });
+  $('review').innerHTML = out;
+  math('#review');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.addEventListener('keydown', function(e){
+  if (done) return;
+  var n = parseInt(e.key, 10);
+  if (!isNaN(n) && n >= 1 && n <= 6){ var b = $('opts').querySelectorAll('.opt')[n - 1]; if (b) b.click(); return; }
+  if (e.key === 'ArrowRight') $('prevBtn').click();
+  if (e.key === 'ArrowLeft') { var nb = $('nextBtn'); if (!nb.classList.contains('hide')) nb.click(); }
+  if (e.key === 'Enter'){ var s = $('submitBtn'); if (!s.classList.contains('hide')) s.click(); else $('nextBtn').click(); }
+});
+render();
+<\/script>
+</body>
+</html>`;
+}
+
+function downloadInteractiveQuizFile(quiz) {
+  if (!quiz || !quiz.questions || !quiz.questions.length) return;
+  const html = buildInteractiveQuizHtml(quiz);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safeFileName(quiz.title || 'اختبار') + ' - تفاعلي.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
 $('#downloadQuizBtn').addEventListener('click', () => {
   if (State.quiz) downloadQuizFile(State.quiz);
 });
+
+$('#downloadQuizInteractiveBtn').addEventListener('click', () => {
+  if (State.quiz) downloadInteractiveQuizFile(State.quiz);
+});
+
 
 $('#retakeBtn').addEventListener('click', () => startQuiz(State.quiz));
 
@@ -4606,7 +4842,8 @@ function renderLibrary() {
       `;
       actionsHtml = `
         <button data-act="open">فتح الاختبار</button>
-        <button data-act="download">تحميل</button>
+        <button data-act="download">تحميل للطباعة</button>
+        <button data-act="download-i">تحميل تفاعلي</button>
         <button data-act="del">حذف</button>
       `;
     }
@@ -4624,6 +4861,10 @@ function renderLibrary() {
       card.querySelector('[data-act="download"]').addEventListener('click', (e) => {
         e.stopPropagation();
         downloadQuizFile(entry);
+      });
+      card.querySelector('[data-act="download-i"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadInteractiveQuizFile(entry);
       });
     }
     card.querySelector('[data-act="del"]').addEventListener('click', (e) => {
