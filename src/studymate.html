@@ -864,7 +864,7 @@ html,body{overflow-x:hidden}
       <div class="settings-row" style="margin-top:14px">
         <div class="settings-col">
           <label class="field-label">اسم البراند</label>
-          <input type="text" class="field" id="explainBrandName" value="المتميزون">
+          <input type="text" class="field" id="explainBrandName" value="Thanawiyah🎓🎓">
         </div>
         <div class="settings-col">
           <label class="field-label">الشعار/التاجلاين</label>
@@ -2269,7 +2269,7 @@ async function callGemini(source, count, difficulty) {
 }
 
 /* =========================================================
-   نماذج مرجعية (Few-shot) من أرشيف ملفات المتميزون السابقة
+   نماذج مرجعية (Few-shot) من أرشيف ملفات Thanawiyah🎓🎓 السابقة
    — للاستئناس بالبنية والروح البصرية فقط، وليس للنسخ الحرفي
    للموضوع أو الألوان أو النصوص.
    ========================================================= */
@@ -2475,7 +2475,7 @@ function buildExplanationPrompt(source, opts, chunkInfo) {
   // template literal طويل، عشان نتجنب تكرار نفس تعبير الـ interpolation (opts.brandName || '...')
   // أكتر من مرة متلاصقة في نص عربي RTL طويل، واللي بيتسبب أحيانًا في مشاكل غريبة أثناء
   // تحليل المحرك لملفات فيها خلط كثيف بين نص RTL وbidi وsyntax من نوع ${...} متكرر جنب بعضه.
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   const brandTag = String(opts.brandTag || 'نجتهد لنوفق 🌟');
 
   const extras = [];
@@ -2860,7 +2860,7 @@ function countRenderedPages(fragmentHtml, layout) {
 }
 
 function buildContinuationChunkPrompt(opts, ctx) {
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   const brandTag = String(opts.brandTag || 'نجتهد لنوفق 🌟');
   const isSpread = opts.layout === 'spread';
   const sectionsText = buildChunkSectionsText(ctx.chunkSections);
@@ -3045,7 +3045,7 @@ const DIRECTIONS_RESPONSE_SCHEMA = {
 };
 
 function buildDirectionsPrompt(source, opts) {
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   return `أنت مصمم هوية بصرية لملفات شرح تعليمية (براند "${brandName}")، بأي لغة يكون المحتوى بها فعليًا. بناءً على موضوع المحتوى المرفق فقط (بدون توليد أي HTML)، اقترح 3 اتجاهات تصميم مختلفة وواضحة التمايز عن بعضها (مش نفس الفكرة بتنويع بسيط).
 
 لكل اتجاه أعطِ:
@@ -4309,7 +4309,7 @@ function buildQuizExportHtml(quiz) {
   }).join('');
 
   const header = (subtitle) => `<div class="doc-header">
-      <div class="doc-brand">المتميزون <span>نجتهد لنوفق 🌟</span></div>
+      <div class="doc-brand">Thanawiyah🎓🎓 <span>نجتهد لنوفق</span></div>
       <h1>${escapeHtml(quiz.title || 'اختبار')}</h1>
       <div class="doc-meta"><span>${subtitle}</span><span>${dateStr}</span><span>${quiz.questions.length} سؤال</span></div>
       <div class="name-line"><span>الاسم: ______________________</span><span>الصف: __________</span></div>
@@ -4320,7 +4320,7 @@ function buildQuizExportHtml(quiz) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(quiz.title || 'اختبار')} — المتميزون</title>
+<title>${escapeHtml(quiz.title || 'اختبار')} — Thanawiyah🎓🎓</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
@@ -4455,7 +4455,7 @@ document.head.appendChild(pageStyle);
 function makeSheet(){
   var s = document.createElement('div');
   s.className = 'sheet';
-  s.innerHTML = '<div class="sheet-head"><span>المتميزون 🌟</span><span class="sh-title"></span></div>'
+  s.innerHTML = '<div class="sheet-head"><span>Thanawiyah🎓🎓</span><span class="sh-title"></span></div>'
     + '<div class="sheet-body"></div>'
     + '<div class="sheet-foot"><span>' + (state.version === 'a' ? 'نسخة الإجابات' : 'نسخة الأسئلة') + '</span>'
     + '<span>صفحة&nbsp;<b class="pn"></b>&nbsp;من&nbsp;<b class="pt"></b></span></div>';
@@ -4625,7 +4625,7 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 <body>
 <div class="wrap">
   <div class="card">
-    <div class="brand">المتميزون <span>نجتهد لنوفق 🌟</span></div>
+    <div class="brand">Thanawiyah🎓🎓 <span>نجتهد لنوفق</span></div>
     <h1 id="title"></h1>
     <div class="meta" id="meta"></div>
 
