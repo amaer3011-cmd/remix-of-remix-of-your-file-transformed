@@ -864,7 +864,7 @@ html,body{overflow-x:hidden}
       <div class="settings-row" style="margin-top:14px">
         <div class="settings-col">
           <label class="field-label">اسم البراند</label>
-          <input type="text" class="field" id="explainBrandName" value="المتميزون">
+          <input type="text" class="field" id="explainBrandName" value="Thanawiyah🎓🎓">
         </div>
         <div class="settings-col">
           <label class="field-label">الشعار/التاجلاين</label>
@@ -2269,7 +2269,7 @@ async function callGemini(source, count, difficulty) {
 }
 
 /* =========================================================
-   نماذج مرجعية (Few-shot) من أرشيف ملفات المتميزون السابقة
+   نماذج مرجعية (Few-shot) من أرشيف ملفات Thanawiyah🎓🎓 السابقة
    — للاستئناس بالبنية والروح البصرية فقط، وليس للنسخ الحرفي
    للموضوع أو الألوان أو النصوص.
    ========================================================= */
@@ -2475,7 +2475,7 @@ function buildExplanationPrompt(source, opts, chunkInfo) {
   // template literal طويل، عشان نتجنب تكرار نفس تعبير الـ interpolation (opts.brandName || '...')
   // أكتر من مرة متلاصقة في نص عربي RTL طويل، واللي بيتسبب أحيانًا في مشاكل غريبة أثناء
   // تحليل المحرك لملفات فيها خلط كثيف بين نص RTL وbidi وsyntax من نوع ${...} متكرر جنب بعضه.
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   const brandTag = String(opts.brandTag || 'نجتهد لنوفق 🌟');
 
   const extras = [];
@@ -2860,7 +2860,7 @@ function countRenderedPages(fragmentHtml, layout) {
 }
 
 function buildContinuationChunkPrompt(opts, ctx) {
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   const brandTag = String(opts.brandTag || 'نجتهد لنوفق 🌟');
   const isSpread = opts.layout === 'spread';
   const sectionsText = buildChunkSectionsText(ctx.chunkSections);
@@ -3045,7 +3045,7 @@ const DIRECTIONS_RESPONSE_SCHEMA = {
 };
 
 function buildDirectionsPrompt(source, opts) {
-  const brandName = String(opts.brandName || 'المتميزون');
+  const brandName = String(opts.brandName || 'Thanawiyah🎓🎓');
   return `أنت مصمم هوية بصرية لملفات شرح تعليمية (براند "${brandName}")، بأي لغة يكون المحتوى بها فعليًا. بناءً على موضوع المحتوى المرفق فقط (بدون توليد أي HTML)، اقترح 3 اتجاهات تصميم مختلفة وواضحة التمايز عن بعضها (مش نفس الفكرة بتنويع بسيط).
 
 لكل اتجاه أعطِ:
@@ -4309,7 +4309,7 @@ function buildQuizExportHtml(quiz) {
   }).join('');
 
   const header = (subtitle) => `<div class="doc-header">
-      <div class="doc-brand">المتميزون <span>نجتهد لنوفق 🌟</span></div>
+      <div class="doc-brand">Thanawiyah🎓🎓 <span>نجتهد لنوفق</span></div>
       <h1>${escapeHtml(quiz.title || 'اختبار')}</h1>
       <div class="doc-meta"><span>${subtitle}</span><span>${dateStr}</span><span>${quiz.questions.length} سؤال</span></div>
       <div class="name-line"><span>الاسم: ______________________</span><span>الصف: __________</span></div>
@@ -4320,7 +4320,7 @@ function buildQuizExportHtml(quiz) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(quiz.title || 'اختبار')} — المتميزون</title>
+<title>${escapeHtml(quiz.title || 'اختبار')} — Thanawiyah🎓🎓</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
@@ -4455,7 +4455,7 @@ document.head.appendChild(pageStyle);
 function makeSheet(){
   var s = document.createElement('div');
   s.className = 'sheet';
-  s.innerHTML = '<div class="sheet-head"><span>المتميزون 🌟</span><span class="sh-title"></span></div>'
+  s.innerHTML = '<div class="sheet-head"><span>Thanawiyah🎓🎓</span><span class="sh-title"></span></div>'
     + '<div class="sheet-body"></div>'
     + '<div class="sheet-foot"><span>' + (state.version === 'a' ? 'نسخة الإجابات' : 'نسخة الأسئلة') + '</span>'
     + '<span>صفحة&nbsp;<b class="pn"></b>&nbsp;من&nbsp;<b class="pt"></b></span></div>';
@@ -4572,31 +4572,33 @@ function buildInteractiveQuizHtml(quiz) {
 @import url('https://fonts.googleapis.com/css2?family=Lalezar&display=swap');
 *{box-sizing:border-box}
 :root{--wine:#6E1423;--wine2:#8C1D2F;--gold:#D9A441;--gold2:#F3DFAE;--paper:#FFFDF6;--ink:#241A1E;--muted:#6B6258;--line:#E7E0CC;--green:#2F7D4F;--red:#B33A3A}
-body{margin:0;font-family:'Cairo',Tahoma,sans-serif;color:var(--ink);background:radial-gradient(1200px 600px at 50% -10%,#efe9db,transparent),#f3f1ea;padding:18px 12px 60px}
-.wrap{max-width:820px;margin:0 auto}
-.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.08);padding:20px;position:relative;overflow:hidden}
-.card::after{content:"";position:absolute;top:0;right:0;left:0;height:5px;background:linear-gradient(90deg,var(--wine),var(--gold) 35%,var(--gold2) 50%,var(--gold) 65%,var(--wine))}
-h1{font-family:'Lalezar','Cairo',sans-serif;font-weight:400;color:var(--wine2);font-size:26px;line-height:1.5;margin:6px 0 6px;text-align:center}
-.brand{font-weight:900;color:var(--wine);font-size:14px;display:flex;justify-content:space-between;gap:8px}
-.brand span{color:#9C7A2E;font-weight:700;font-size:12.5px}
+body{margin:0;font-family:'Cairo',Tahoma,sans-serif;color:var(--ink);background:radial-gradient(1100px 620px at 50% -12%,#f6ecd6,transparent),radial-gradient(700px 420px at 10% 110%,#efe3e5,transparent),#f4f2ec;padding:22px 12px 64px}
+.wrap{max-width:840px;margin:0 auto}
+.card{background:linear-gradient(180deg,#fffdf7,#fffaf0);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 48px rgba(110,20,35,.10),0 2px 0 rgba(217,164,65,.25) inset;padding:22px 22px 24px;position:relative;overflow:hidden}
+.card::after{content:"";position:absolute;top:0;right:0;left:0;height:6px;background:linear-gradient(90deg,var(--wine),var(--gold) 35%,var(--gold2) 50%,var(--gold) 65%,var(--wine))}
+.card::before{content:"";position:absolute;inset:10px;border:1px solid rgba(217,164,65,.35);border-radius:16px;pointer-events:none}
+h1{font-family:'Lalezar','Cairo',sans-serif;font-weight:400;color:var(--wine2);font-size:28px;line-height:1.5;margin:10px 0 8px;text-align:center;text-shadow:0 1px 0 #fff}
+h1::after{content:"❖";display:block;color:var(--gold);font-size:14px;margin-top:2px}
+.brand{font-weight:900;color:var(--wine);font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1}
+.brand span{color:#9C7A2E;font-weight:700;font-size:12.5px;background:#FFF6DF;border:1px solid var(--gold2);border-radius:999px;padding:3px 12px}
 .meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
-.meta span{background:#F6F1DF;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
-.bar{height:8px;border-radius:999px;background:#eee6cf;overflow:hidden;margin:14px 0 6px}
-.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--wine),var(--gold));transition:width .25s}
+.meta span{background:#F8F3E2;border:1px solid var(--line);border-radius:999px;padding:4px 13px}
+.bar{height:10px;border-radius:999px;background:#efe7d1;overflow:hidden;margin:16px 0 7px;box-shadow:inset 0 1px 3px rgba(0,0,0,.08)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--wine),var(--gold));transition:width .3s ease}
 .count{font-size:12.5px;font-weight:800;color:var(--muted);display:flex;justify-content:space-between}
-.q{font-weight:800;font-size:17px;line-height:1.9;margin:16px 0 12px;display:flex;gap:10px}
-.qn{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900}
-.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:right;font-family:inherit;font-size:15px;line-height:1.7;padding:11px 14px;margin-bottom:9px;border:1.6px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;transition:.15s}
-.opt:hover{border-color:var(--gold);background:#FFFBF0}
-.opt.sel{border-color:var(--wine2);background:#FBF1F2;font-weight:800}
+.q{font-weight:800;font-size:17.5px;line-height:1.95;margin:18px 0 14px;display:flex;gap:11px;position:relative;z-index:1}
+.qn{flex-shrink:0;width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--wine),var(--wine2));color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;box-shadow:0 4px 12px rgba(110,20,35,.28)}
+.opt{display:flex;align-items:center;gap:11px;width:100%;text-align:right;font-family:inherit;font-size:15px;line-height:1.75;padding:12px 15px;margin-bottom:10px;border:1.6px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s;position:relative;z-index:1}
+.opt:hover{border-color:var(--gold);background:#FFFBF0;transform:translateY(-1px);box-shadow:0 6px 16px rgba(217,164,65,.18)}
+.opt.sel{border-color:var(--wine2);background:#FBF1F2;font-weight:800;box-shadow:0 6px 18px rgba(110,20,35,.14)}
 .opt.ok{border-color:var(--green);background:#EFF9F2;font-weight:800}
 .opt.bad{border-color:var(--red);background:#FBEFEF;font-weight:800}
-.ltr{width:24px;height:24px;border-radius:50%;background:#F3F0D8;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.ltr{width:27px;height:27px;border-radius:9px;background:#F6F1DC;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;flex-shrink:0}
 .opt.sel .ltr{background:var(--wine2);color:#fff;border-color:var(--wine2)}
 .opt.ok .ltr{background:var(--green);color:#fff;border-color:var(--green)}
 .opt.bad .ltr{background:var(--red);color:#fff;border-color:var(--red)}
-.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:18px}
-button.btn{font-family:inherit;font-weight:800;font-size:14px;border:1px solid var(--gold);background:#fffdf6;color:var(--wine);border-radius:999px;padding:10px 20px;cursor:pointer;transition:.15s}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:20px;position:relative;z-index:1}
+button.btn{font-family:inherit;font-weight:800;font-size:14px;border:1px solid var(--gold);background:#fffdf6;color:var(--wine);border-radius:999px;padding:11px 22px;cursor:pointer;transition:.15s;box-shadow:0 3px 10px rgba(0,0,0,.05)}
 button.btn:hover{background:#FFF4D8}
 button.btn.primary{background:var(--wine2);color:#fff;border-color:var(--wine2)}
 button.btn:disabled{opacity:.45;cursor:not-allowed}
@@ -4625,7 +4627,7 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 <body>
 <div class="wrap">
   <div class="card">
-    <div class="brand">المتميزون <span>نجتهد لنوفق 🌟</span></div>
+    <div class="brand">Thanawiyah🎓🎓 <span>نجتهد لنوفق</span></div>
     <h1 id="title"></h1>
     <div class="meta" id="meta"></div>
 
