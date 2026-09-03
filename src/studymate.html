@@ -2510,8 +2510,11 @@ function sanitizeQuizQuestions(questions, wanted) {
   }
 
   // ترتيب حسب الجودة ثم قصّ على العدد المطلوب
-  out.sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0));
-  const limited = wanted ? out.slice(0, wanted) : out;
+  out.forEach((q, i) => { q.__idx = i; });
+  const ranked = out.slice().sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0));
+  const limited = (wanted ? ranked.slice(0, wanted) : ranked)
+    .sort((a, b) => a.__idx - b.__idx)
+    .map(({ __idx, ...q }) => q); // نرجّع الترتيب الأصلي حسب تسلسل المحتوى
 
   // توزيع مكان الإجابة الصحيحة بالتناوب عشان ما تبقاش متوقعة
   return limited.map((q, i) => {
