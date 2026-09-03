@@ -2061,7 +2061,7 @@ async function buildSourcePayload() {
       $('#ytHint').textContent = 'معرفناش نجيب نص الفيديو تلقائيًا. من فضلك الصق نص/ترانسكريبت الفيديو في الصندوق تحت وحاول تاني.';
       throw new Error('__silent__'); // وقف بهدوء من غير alert زيادة
     }
-    return { kind: 'youtube', title: url, text: transcript, images: [], url };
+    return { kind: 'youtube', title: url, text: await organizeContent(transcript, url), images: [], url };
   }
 
   throw new Error('اختر مصدر أولاً.');
