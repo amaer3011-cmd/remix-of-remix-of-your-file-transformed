@@ -1951,7 +1951,57 @@ async function fetchYoutubeTranscriptCached(videoId) {
 /* =========================================================
    بناء محتوى المصدر (النص/الصور اللي هتتبعت لـ Gemini)
    ========================================================= */
+/* =========================================================
+   تنظيم وترتيب المحتوى قبل الكتابة
+   بيرتّب النص الخام المستخرج (PDF/HTML/يوتيوب) في بنية واضحة:
+   عناوين، محاور، نقاط، تعريفات، قوانين، أمثلة — مع حذف الحشو
+   والتكرار وترقيم الصفحات، من غير حذف أي معلومة تعليمية.
+   ========================================================= */
+const _organizeCache = new Map();
+
+const ORGANIZE_MIN_CHARS = 400;
+const ORGANIZE_MAX_CHARS = 60000;
+
+async function organizeContent(rawText, title) {
+  const text = cleanExtractedText(rawText);
+  if (!text || text.length < ORGANIZE_MIN_CHARS) return text;
+  const key = (title || '') + ':' + text.length + ':' + text.slice(0, 120);
+  if (_organizeCache.has(key)) return _organizeCache.get(key);
+
+  const input = text.length > ORGANIZE_MAX_CHARS ? text.slice(0, ORGANIZE_MAX_CHARS) : text;
+
+  const prompt = `أنت محرّر تعليمي محترف. المطلوب: إعادة تنظيم وترتيب المحتوى الخام التالي (مستخرج آليًا من ملف) قبل استخدامه في التوليد.
+
+## القواعد
+- لا تحذف أي معلومة تعليمية، ولا تضف أي معلومة من عندك إطلاقًا.
+- احذف فقط: أرقام الصفحات، الترويسة/التذييل المتكررة، الإعلانات، أرقام التليفونات، الكلام الإداري، الحشو والتكرار الحرفي.
+- أصلح تقطيع الكلمات والسطور الناتج عن الاستخراج الآلي، ورتّب الجمل المبعثرة في فقرات مفهومة.
+- رتّب المحتوى ترتيبًا منطقيًا: الموضوع ← المحاور ← التعريفات ← القوانين/القواعد ← الشروح ← الأمثلة ← الملاحظات.
+- استخدم Markdown بسيط: \`#\` للعنوان الرئيسي، \`##\` للمحاور، \`###\` للعناوين الفرعية، \`-\` للنقاط، وجداول Markdown لو المحتوى جدولي.
+- المعادلات والرموز الرياضية اكتبها LaTeX بين علامتي $.
+- التزم بنفس لغة المصدر حرفيًا (لو المصدر إنجليزي خلّيه إنجليزي).
+- أخرج المحتوى المنظّم فقط بدون أي مقدمة أو تعليق منك.
+
+عنوان المصدر: ${title || 'بدون عنوان'}
+
+--- المحتوى الخام ---
+${input}`;
+
+  try {
+    showLoading('جاري تنظيم وترتيب المحتوى...', 'بنرتب المحتوى في بنية واضحة قبل التوليد');
+    const out = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
+    const organized = String(out || '').replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim();
+    // لو الناتج قصير بشكل مريب، ارجع للنص الأصلي عشان مانخسرش محتوى
+    const result = organized.length >= input.length * 0.35 ? organized : text;
+    _organizeCache.set(key, result);
+    return result;
+  } catch (e) {
+    return text; // لو التنظيم فشل، كمّل بالنص الخام عادي
+  }
+}
+
 async function buildSourcePayload() {
+
   const src = State.currentSource;
 
   if (src === 'text') {
