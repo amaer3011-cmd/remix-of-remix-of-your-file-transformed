@@ -1935,10 +1935,10 @@ async function extractFromHtmlFileCached(file) {
 }
 async function extractFromPdfCached(file) {
   const key = 'pdf:' + fileIdentity(file);
-  if (State.extractionCache.key === key) return State.extractionCache.text;
-  const text = await extractFromPdf(file);
-  State.extractionCache = { key, text };
-  return text;
+  if (State.extractionCache.key === key && State.extractionCache.pdf) return State.extractionCache.pdf;
+  const result = await extractFromPdf(file);
+  State.extractionCache = { key, text: result.text, pdf: result };
+  return result;
 }
 async function fetchYoutubeTranscriptCached(videoId) {
   const key = 'youtube:' + videoId;
