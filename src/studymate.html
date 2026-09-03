@@ -2440,8 +2440,89 @@ async function callGemini(source, count, difficulty) {
   catch (e) { throw new Error('حصل خطأ في تحليل رد الذكاء الاصطناعي. حاول تاني.'); }
 
   if (!parsed.questions || !parsed.questions.length) throw new Error('لم يتم توليد أي أسئلة، حاول بمحتوى أطول أو أوضح.');
+
+  parsed.questions = sanitizeQuizQuestions(parsed.questions, count);
+  if (!parsed.questions.length) throw new Error('الأسئلة اللي اتولدت مكانتش بالجودة المطلوبة. حاول تاني بمحتوى أوضح.');
   return parsed;
 }
+
+/* =========================================================
+   فلترة جودة الأسئلة بعد التوليد
+   - تشيل الأسئلة الناقصة أو اللي مالهاش إجابة صحيحة واضحة
+   - تشيل الاختيارات المكررة والأسئلة المكررة (نفس الفكرة/الصياغة)
+   - تشيل الأسئلة اللي جودتها ضعيفة أو اللي بتقول "كل ما سبق"
+   - توزّع مكان الإجابة الصحيحة عشان ما تبقاش دايمًا في نفس الترتيب
+   ========================================================= */
+function normalizeForCompare(s) {
+  return String(s || '')
+    .replace(/[\u064B-\u0652\u0640]/g, '')      // تشكيل وتطويل
+    .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim().toLowerCase();
+}
+
+function sanitizeQuizQuestions(questions, wanted) {
+  const BAD_OPTION = /^(كل ما سبق|كل ما ذكر|جميع ما سبق|لا شيء مما سبق|all of the above|none of the above)\.?$/i;
+  const seenQ = new Set();
+  const seenConcept = new Map();
+  const out = [];
+
+  for (const raw of questions) {
+    const q = { ...raw };
+    if (!q.question || typeof q.question !== 'string') continue;
+    q.question = q.question.trim();
+    if (q.question.length < 10) continue;
+
+    if (!Array.isArray(q.options)) continue;
+    const correct = q.options[q.correct_index];
+    // اختيارات فريدة وغير فاضية مع الحفاظ على الإجابة الصحيحة
+    const options = [];
+    for (const o of q.options) {
+      const t = String(o || '').trim();
+      if (!t) continue;
+      if (options.some(x => normalizeForCompare(x) === normalizeForCompare(t))) continue;
+      options.push(t);
+    }
+    if (options.length < 3) continue;
+    if (options.some(o => BAD_OPTION.test(o))) continue;
+    const ci = options.findIndex(o => o === String(correct || '').trim());
+    if (ci === -1) continue;
+    q.options = options;
+    q.correct_index = ci;
+
+    // جودة ضعيفة
+    if (typeof q.quality_score === 'number' && q.quality_score < 70) continue;
+
+    // تكرار السؤال
+    const key = normalizeForCompare(q.question);
+    if (seenQ.has(key)) continue;
+    seenQ.add(key);
+
+    // تكرار نفس المفهوم أكتر من مرتين
+    if (q.concept) {
+      const ck = normalizeForCompare(q.concept);
+      const n = (seenConcept.get(ck) || 0) + 1;
+      if (n > 2) continue;
+      seenConcept.set(ck, n);
+    }
+
+    out.push(q);
+  }
+
+  // ترتيب حسب الجودة ثم قصّ على العدد المطلوب
+  out.sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0));
+  const limited = wanted ? out.slice(0, wanted) : out;
+
+  // توزيع مكان الإجابة الصحيحة بالتناوب عشان ما تبقاش متوقعة
+  return limited.map((q, i) => {
+    const target = i % q.options.length;
+    if (target === q.correct_index) return q;
+    const opts = q.options.slice();
+    [opts[target], opts[q.correct_index]] = [opts[q.correct_index], opts[target]];
+    return { ...q, options: opts, correct_index: target };
+  });
+}
+
 
 /* =========================================================
    نماذج مرجعية (Few-shot) من أرشيف ملفات Thanawiyah🎓🎓 السابقة
