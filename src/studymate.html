@@ -1973,10 +1973,17 @@ async function buildSourcePayload() {
     if (!State.files.pdf.length) throw new Error('من فضلك ارفع ملف PDF.');
     showLoading('جاري استخراج النص من ملف PDF...', 'ممكن ياخد وقت أطول شوية للملفات الكبيرة');
     const file = State.files.pdf[0];
-    const text = await extractFromPdfCached(file);
-    if (!text) throw new Error('الملف ده متضمنش نص قابل للاستخراج (ممكن يكون صور ممسوحة ضوئيًا).');
-    return { kind: 'pdf', title: file.name, text, images: [] };
+    const res = await extractFromPdfCached(file);
+    const text = res.text || '';
+    const images = res.images || [];
+    if (!text && !images.length) throw new Error('الملف ده متضمنش نص قابل للاستخراج (ممكن يكون صور ممسوحة ضوئيًا).');
+    if (res.scannedPages) {
+      toast(`فيه ${res.scannedPages} صفحة ممسوحة ضوئيًا، بنقراها كصور بالذكاء الاصطناعي.`, 'warn');
+    }
+    const organized = await organizeContent(text, file.name);
+    return { kind: 'pdf', title: file.name, text: organized, images };
   }
+
 
   if (src === 'image') {
     if (!State.files.image.length) throw new Error('من فضلك ارفع صورة واحدة على الأقل.');
