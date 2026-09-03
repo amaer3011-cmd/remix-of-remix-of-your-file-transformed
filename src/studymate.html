@@ -2016,7 +2016,7 @@ async function buildSourcePayload() {
     const file = State.files.htmlfile[0];
     const text = await extractFromHtmlFileCached(file);
     if (!text) throw new Error('مقدرتش أستخرج نص من الملف ده.');
-    return { kind: 'html', title: file.name, text, images: [] };
+    return { kind: 'html', title: file.name, text: await organizeContent(text, file.name), images: [] };
   }
 
   if (src === 'pdf') {
