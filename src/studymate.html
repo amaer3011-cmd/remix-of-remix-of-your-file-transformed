@@ -1733,22 +1733,140 @@ function readFileAsArrayBuffer(file) {
     r.readAsArrayBuffer(file);
   });
 }
+/* --- تنظيف وترتيب النص المستخرج --- */
+function cleanExtractedText(text) {
+  return String(text || '')
+    // مسافات غير قياسية
+    .replace(/[\u00A0\u2007\u202F]/g, ' ')
+    // محارف التحكم في الاتجاه اللي بتلخبط الترتيب
+    .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '')
+    // فك تقطيع الكلمات بالشرطة في آخر السطر
+    .replace(/(\p{L})-\s*\n\s*(\p{L})/gu, '$1$2')
+    // توحيد علامات التعداد
+    .replace(/^[•▪●◦*]\s*/gm, '- ')
+    // مسافات مكررة
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ +\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/* إزالة الترويسة/التذييل المتكررة في كل صفحات الـ PDF (أرقام صفحات، اسم الكتاب...) */
+function stripRepeatedLines(pages) {
+  const counts = new Map();
+  pages.forEach(lines => {
+    const edge = [...lines.slice(0, 2), ...lines.slice(-2)];
+    new Set(edge.map(l => l.trim())).forEach(l => {
+      if (l.length > 2 && l.length < 90) counts.set(l, (counts.get(l) || 0) + 1);
+    });
+  });
+  const threshold = Math.max(3, Math.ceil(pages.length * 0.6));
+  const repeated = new Set([...counts].filter(([, c]) => c >= threshold).map(([l]) => l));
+  const isPageNum = (l) => /^[\s\-—–.]*[\d٠-٩]{1,4}[\s\-—–.]*$/.test(l);
+  return pages.map(lines =>
+    lines.filter(l => !repeated.has(l.trim()) && !isPageNum(l.trim()))
+  );
+}
+
+/* تجميع عناصر النص في سطور حقيقية اعتمادًا على إحداثيات الصفحة (يحافظ على ترتيب RTL/LTR) */
+function pdfItemsToLines(items) {
+  const rows = [];
+  const tol = 3;
+  for (const it of items) {
+    const str = it.str;
+    if (!str || !str.trim()) continue;
+    const tr = it.transform || [1, 0, 0, 1, 0, 0];
+    const x = tr[4], y = tr[5];
+    let row = rows.find(r => Math.abs(r.y - y) <= tol);
+    if (!row) { row = { y, items: [] }; rows.push(row); }
+    row.items.push({ x, str, w: it.width || 0 });
+  }
+  rows.sort((a, b) => b.y - a.y); // من أعلى الصفحة لأسفلها
+  return rows.map(row => {
+    const rtl = /[\u0600-\u06FF]/.test(row.items.map(i => i.str).join(''));
+    row.items.sort((a, b) => (rtl ? b.x - a.x : a.x - b.x));
+    let line = '';
+    let prev = null;
+    for (const it of row.items) {
+      if (prev) {
+        const gap = rtl ? prev.x - (it.x + it.w) : it.x - (prev.x + prev.w);
+        if (gap > 1.2) line += ' ';
+      }
+      line += it.str;
+      prev = it;
+    }
+    return line.replace(/\s{2,}/g, ' ').trim();
+  }).filter(Boolean);
+}
+
+/* رسم صفحة PDF كصورة (احتياطي للصفحات الممسوحة ضوئيًا بدون نص) */
+async function renderPdfPageToImage(page, maxWidth = 1400) {
+  const base = page.getViewport({ scale: 1 });
+  const scale = Math.min(2.2, Math.max(1, maxWidth / base.width));
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  return { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] };
+}
+
+/**
+ * استخراج محسّن من PDF:
+ * - يبني سطورًا حقيقية من إحداثيات العناصر بدل لصق الكلمات ببعض
+ * - يشيل الترويسة/التذييل وأرقام الصفحات المتكررة
+ * - ينظّف النص (شرطات التقطيع، المسافات، محارف الاتجاه)
+ * - لو الصفحة ممسوحة ضوئيًا (نص شبه معدوم) يرسمها كصورة عشان يقراها الذكاء الاصطناعي
+ * بيرجع { text, images, pages, scannedPages }
+ */
 async function extractFromPdf(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const buf = await readFileAsArrayBuffer(file);
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  let fullText = '';
   const maxPages = Math.min(pdf.numPages, 60);
+  const MAX_SCAN_IMAGES = 8;
+
+  const pageLines = [];
+  const scannedIdx = [];
+  const pageRefs = [];
+
   for (let i = 1; i <= maxPages; i++) {
     const page = await pdf.getPage(i);
+    pageRefs.push(page);
     const content = await page.getTextContent();
-    fullText += content.items.map(it => it.str).join(' ') + '\n\n';
+    const lines = pdfItemsToLines(content.items);
+    const charCount = lines.join('').replace(/\s/g, '').length;
+    if (charCount < 25) scannedIdx.push(i - 1);
+    pageLines.push(lines);
+    if (i % 5 === 0) showLoading('جاري استخراج النص من ملف PDF...', `صفحة ${i} من ${maxPages}`);
   }
+
+  const cleanedPages = stripRepeatedLines(pageLines);
+  const text = cleanExtractedText(
+    cleanedPages
+      .map((lines, idx) => (lines.length ? `[صفحة ${idx + 1}]\n` + lines.join('\n') : ''))
+      .filter(Boolean)
+      .join('\n\n')
+  );
+
+  const images = [];
+  if (scannedIdx.length) {
+    const take = scannedIdx.slice(0, MAX_SCAN_IMAGES);
+    for (let n = 0; n < take.length; n++) {
+      showLoading('الملف فيه صفحات ممسوحة ضوئيًا...', `بنحوّل صفحة ${take[n] + 1} لصورة (${n + 1}/${take.length})`);
+      try { images.push(await renderPdfPageToImage(pageRefs[take[n]])); } catch (e) { /* تجاهل الصفحة دي */ }
+    }
+  }
+
   if (pdf.numPages > maxPages) {
     toast(`الملف فيه ${pdf.numPages} صفحة، واتاخد منه أول ${maxPages} صفحة بس عشان الحجم. لو محتاج الملف كله، قسّمه وارفعه على دفعات.`, 'warn');
   }
-  return fullText.trim();
+
+  return { text, images, pages: maxPages, scannedPages: scannedIdx.length };
 }
+
 
 /* --- صورة: تحويل base64 لإرسالها لـ Gemini Vision --- */
 function readFileAsBase64(file) {
@@ -1817,10 +1935,10 @@ async function extractFromHtmlFileCached(file) {
 }
 async function extractFromPdfCached(file) {
   const key = 'pdf:' + fileIdentity(file);
-  if (State.extractionCache.key === key) return State.extractionCache.text;
-  const text = await extractFromPdf(file);
-  State.extractionCache = { key, text };
-  return text;
+  if (State.extractionCache.key === key && State.extractionCache.pdf) return State.extractionCache.pdf;
+  const result = await extractFromPdf(file);
+  State.extractionCache = { key, text: result.text, pdf: result };
+  return result;
 }
 async function fetchYoutubeTranscriptCached(videoId) {
   const key = 'youtube:' + videoId;
@@ -1833,7 +1951,57 @@ async function fetchYoutubeTranscriptCached(videoId) {
 /* =========================================================
    بناء محتوى المصدر (النص/الصور اللي هتتبعت لـ Gemini)
    ========================================================= */
+/* =========================================================
+   تنظيم وترتيب المحتوى قبل الكتابة
+   بيرتّب النص الخام المستخرج (PDF/HTML/يوتيوب) في بنية واضحة:
+   عناوين، محاور، نقاط، تعريفات، قوانين، أمثلة — مع حذف الحشو
+   والتكرار وترقيم الصفحات، من غير حذف أي معلومة تعليمية.
+   ========================================================= */
+const _organizeCache = new Map();
+
+const ORGANIZE_MIN_CHARS = 400;
+const ORGANIZE_MAX_CHARS = 60000;
+
+async function organizeContent(rawText, title) {
+  const text = cleanExtractedText(rawText);
+  if (!text || text.length < ORGANIZE_MIN_CHARS) return text;
+  const key = (title || '') + ':' + text.length + ':' + text.slice(0, 120);
+  if (_organizeCache.has(key)) return _organizeCache.get(key);
+
+  const input = text.length > ORGANIZE_MAX_CHARS ? text.slice(0, ORGANIZE_MAX_CHARS) : text;
+
+  const prompt = `أنت محرّر تعليمي محترف. المطلوب: إعادة تنظيم وترتيب المحتوى الخام التالي (مستخرج آليًا من ملف) قبل استخدامه في التوليد.
+
+## القواعد
+- لا تحذف أي معلومة تعليمية، ولا تضف أي معلومة من عندك إطلاقًا.
+- احذف فقط: أرقام الصفحات، الترويسة/التذييل المتكررة، الإعلانات، أرقام التليفونات، الكلام الإداري، الحشو والتكرار الحرفي.
+- أصلح تقطيع الكلمات والسطور الناتج عن الاستخراج الآلي، ورتّب الجمل المبعثرة في فقرات مفهومة.
+- رتّب المحتوى ترتيبًا منطقيًا: الموضوع ← المحاور ← التعريفات ← القوانين/القواعد ← الشروح ← الأمثلة ← الملاحظات.
+- استخدم Markdown بسيط: \`#\` للعنوان الرئيسي، \`##\` للمحاور، \`###\` للعناوين الفرعية، \`-\` للنقاط، وجداول Markdown لو المحتوى جدولي.
+- المعادلات والرموز الرياضية اكتبها LaTeX بين علامتي $.
+- التزم بنفس لغة المصدر حرفيًا (لو المصدر إنجليزي خلّيه إنجليزي).
+- أخرج المحتوى المنظّم فقط بدون أي مقدمة أو تعليق منك.
+
+عنوان المصدر: ${title || 'بدون عنوان'}
+
+--- المحتوى الخام ---
+${input}`;
+
+  try {
+    showLoading('جاري تنظيم وترتيب المحتوى...', 'بنرتب المحتوى في بنية واضحة قبل التوليد');
+    const out = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
+    const organized = String(out || '').replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim();
+    // لو الناتج قصير بشكل مريب، ارجع للنص الأصلي عشان مانخسرش محتوى
+    const result = organized.length >= input.length * 0.35 ? organized : text;
+    _organizeCache.set(key, result);
+    return result;
+  } catch (e) {
+    return text; // لو التنظيم فشل، كمّل بالنص الخام عادي
+  }
+}
+
 async function buildSourcePayload() {
+
   const src = State.currentSource;
 
   if (src === 'text') {
@@ -1848,17 +2016,24 @@ async function buildSourcePayload() {
     const file = State.files.htmlfile[0];
     const text = await extractFromHtmlFileCached(file);
     if (!text) throw new Error('مقدرتش أستخرج نص من الملف ده.');
-    return { kind: 'html', title: file.name, text, images: [] };
+    return { kind: 'html', title: file.name, text: await organizeContent(text, file.name), images: [] };
   }
 
   if (src === 'pdf') {
     if (!State.files.pdf.length) throw new Error('من فضلك ارفع ملف PDF.');
     showLoading('جاري استخراج النص من ملف PDF...', 'ممكن ياخد وقت أطول شوية للملفات الكبيرة');
     const file = State.files.pdf[0];
-    const text = await extractFromPdfCached(file);
-    if (!text) throw new Error('الملف ده متضمنش نص قابل للاستخراج (ممكن يكون صور ممسوحة ضوئيًا).');
-    return { kind: 'pdf', title: file.name, text, images: [] };
+    const res = await extractFromPdfCached(file);
+    const text = res.text || '';
+    const images = res.images || [];
+    if (!text && !images.length) throw new Error('الملف ده متضمنش نص قابل للاستخراج (ممكن يكون صور ممسوحة ضوئيًا).');
+    if (res.scannedPages) {
+      toast(`فيه ${res.scannedPages} صفحة ممسوحة ضوئيًا، بنقراها كصور بالذكاء الاصطناعي.`, 'warn');
+    }
+    const organized = await organizeContent(text, file.name);
+    return { kind: 'pdf', title: file.name, text: organized, images };
   }
+
 
   if (src === 'image') {
     if (!State.files.image.length) throw new Error('من فضلك ارفع صورة واحدة على الأقل.');
@@ -1886,7 +2061,7 @@ async function buildSourcePayload() {
       $('#ytHint').textContent = 'معرفناش نجيب نص الفيديو تلقائيًا. من فضلك الصق نص/ترانسكريبت الفيديو في الصندوق تحت وحاول تاني.';
       throw new Error('__silent__'); // وقف بهدوء من غير alert زيادة
     }
-    return { kind: 'youtube', title: url, text: transcript, images: [], url };
+    return { kind: 'youtube', title: url, text: await organizeContent(transcript, url), images: [], url };
   }
 
   throw new Error('اختر مصدر أولاً.');
@@ -2265,8 +2440,92 @@ async function callGemini(source, count, difficulty) {
   catch (e) { throw new Error('حصل خطأ في تحليل رد الذكاء الاصطناعي. حاول تاني.'); }
 
   if (!parsed.questions || !parsed.questions.length) throw new Error('لم يتم توليد أي أسئلة، حاول بمحتوى أطول أو أوضح.');
+
+  parsed.questions = sanitizeQuizQuestions(parsed.questions, count);
+  if (!parsed.questions.length) throw new Error('الأسئلة اللي اتولدت مكانتش بالجودة المطلوبة. حاول تاني بمحتوى أوضح.');
   return parsed;
 }
+
+/* =========================================================
+   فلترة جودة الأسئلة بعد التوليد
+   - تشيل الأسئلة الناقصة أو اللي مالهاش إجابة صحيحة واضحة
+   - تشيل الاختيارات المكررة والأسئلة المكررة (نفس الفكرة/الصياغة)
+   - تشيل الأسئلة اللي جودتها ضعيفة أو اللي بتقول "كل ما سبق"
+   - توزّع مكان الإجابة الصحيحة عشان ما تبقاش دايمًا في نفس الترتيب
+   ========================================================= */
+function normalizeForCompare(s) {
+  return String(s || '')
+    .replace(/[\u064B-\u0652\u0640]/g, '')      // تشكيل وتطويل
+    .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim().toLowerCase();
+}
+
+function sanitizeQuizQuestions(questions, wanted) {
+  const BAD_OPTION = /^(كل ما سبق|كل ما ذكر|جميع ما سبق|لا شيء مما سبق|all of the above|none of the above)\.?$/i;
+  const seenQ = new Set();
+  const seenConcept = new Map();
+  const out = [];
+
+  for (const raw of questions) {
+    const q = { ...raw };
+    if (!q.question || typeof q.question !== 'string') continue;
+    q.question = q.question.trim();
+    if (q.question.length < 10) continue;
+
+    if (!Array.isArray(q.options)) continue;
+    const correct = q.options[q.correct_index];
+    // اختيارات فريدة وغير فاضية مع الحفاظ على الإجابة الصحيحة
+    const options = [];
+    for (const o of q.options) {
+      const t = String(o || '').trim();
+      if (!t) continue;
+      if (options.some(x => normalizeForCompare(x) === normalizeForCompare(t))) continue;
+      options.push(t);
+    }
+    if (options.length < 3) continue;
+    if (options.some(o => BAD_OPTION.test(o))) continue;
+    const ci = options.findIndex(o => o === String(correct || '').trim());
+    if (ci === -1) continue;
+    q.options = options;
+    q.correct_index = ci;
+
+    // جودة ضعيفة
+    if (typeof q.quality_score === 'number' && q.quality_score < 70) continue;
+
+    // تكرار السؤال
+    const key = normalizeForCompare(q.question);
+    if (seenQ.has(key)) continue;
+    seenQ.add(key);
+
+    // تكرار نفس المفهوم أكتر من مرتين
+    if (q.concept) {
+      const ck = normalizeForCompare(q.concept);
+      const n = (seenConcept.get(ck) || 0) + 1;
+      if (n > 2) continue;
+      seenConcept.set(ck, n);
+    }
+
+    out.push(q);
+  }
+
+  // ترتيب حسب الجودة ثم قصّ على العدد المطلوب
+  out.forEach((q, i) => { q.__idx = i; });
+  const ranked = out.slice().sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0));
+  const limited = (wanted ? ranked.slice(0, wanted) : ranked)
+    .sort((a, b) => a.__idx - b.__idx)
+    .map(({ __idx, ...q }) => q); // نرجّع الترتيب الأصلي حسب تسلسل المحتوى
+
+  // توزيع مكان الإجابة الصحيحة بالتناوب عشان ما تبقاش متوقعة
+  return limited.map((q, i) => {
+    const target = i % q.options.length;
+    if (target === q.correct_index) return q;
+    const opts = q.options.slice();
+    [opts[target], opts[q.correct_index]] = [opts[q.correct_index], opts[target]];
+    return { ...q, options: opts, correct_index: target };
+  });
+}
+
 
 /* =========================================================
    نماذج مرجعية (Few-shot) من أرشيف ملفات Thanawiyah🎓🎓 السابقة
