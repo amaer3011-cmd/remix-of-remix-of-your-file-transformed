@@ -1733,22 +1733,140 @@ function readFileAsArrayBuffer(file) {
     r.readAsArrayBuffer(file);
   });
 }
+/* --- تنظيف وترتيب النص المستخرج --- */
+function cleanExtractedText(text) {
+  return String(text || '')
+    // مسافات غير قياسية
+    .replace(/[\u00A0\u2007\u202F]/g, ' ')
+    // محارف التحكم في الاتجاه اللي بتلخبط الترتيب
+    .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '')
+    // فك تقطيع الكلمات بالشرطة في آخر السطر
+    .replace(/(\p{L})-\s*\n\s*(\p{L})/gu, '$1$2')
+    // توحيد علامات التعداد
+    .replace(/^[•▪●◦*]\s*/gm, '- ')
+    // مسافات مكررة
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ +\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/* إزالة الترويسة/التذييل المتكررة في كل صفحات الـ PDF (أرقام صفحات، اسم الكتاب...) */
+function stripRepeatedLines(pages) {
+  const counts = new Map();
+  pages.forEach(lines => {
+    const edge = [...lines.slice(0, 2), ...lines.slice(-2)];
+    new Set(edge.map(l => l.trim())).forEach(l => {
+      if (l.length > 2 && l.length < 90) counts.set(l, (counts.get(l) || 0) + 1);
+    });
+  });
+  const threshold = Math.max(3, Math.ceil(pages.length * 0.6));
+  const repeated = new Set([...counts].filter(([, c]) => c >= threshold).map(([l]) => l));
+  const isPageNum = (l) => /^[\s\-—–.]*[\d٠-٩]{1,4}[\s\-—–.]*$/.test(l);
+  return pages.map(lines =>
+    lines.filter(l => !repeated.has(l.trim()) && !isPageNum(l.trim()))
+  );
+}
+
+/* تجميع عناصر النص في سطور حقيقية اعتمادًا على إحداثيات الصفحة (يحافظ على ترتيب RTL/LTR) */
+function pdfItemsToLines(items) {
+  const rows = [];
+  const tol = 3;
+  for (const it of items) {
+    const str = it.str;
+    if (!str || !str.trim()) continue;
+    const tr = it.transform || [1, 0, 0, 1, 0, 0];
+    const x = tr[4], y = tr[5];
+    let row = rows.find(r => Math.abs(r.y - y) <= tol);
+    if (!row) { row = { y, items: [] }; rows.push(row); }
+    row.items.push({ x, str, w: it.width || 0 });
+  }
+  rows.sort((a, b) => b.y - a.y); // من أعلى الصفحة لأسفلها
+  return rows.map(row => {
+    const rtl = /[\u0600-\u06FF]/.test(row.items.map(i => i.str).join(''));
+    row.items.sort((a, b) => (rtl ? b.x - a.x : a.x - b.x));
+    let line = '';
+    let prev = null;
+    for (const it of row.items) {
+      if (prev) {
+        const gap = rtl ? prev.x - (it.x + it.w) : it.x - (prev.x + prev.w);
+        if (gap > 1.2) line += ' ';
+      }
+      line += it.str;
+      prev = it;
+    }
+    return line.replace(/\s{2,}/g, ' ').trim();
+  }).filter(Boolean);
+}
+
+/* رسم صفحة PDF كصورة (احتياطي للصفحات الممسوحة ضوئيًا بدون نص) */
+async function renderPdfPageToImage(page, maxWidth = 1400) {
+  const base = page.getViewport({ scale: 1 });
+  const scale = Math.min(2.2, Math.max(1, maxWidth / base.width));
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  return { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] };
+}
+
+/**
+ * استخراج محسّن من PDF:
+ * - يبني سطورًا حقيقية من إحداثيات العناصر بدل لصق الكلمات ببعض
+ * - يشيل الترويسة/التذييل وأرقام الصفحات المتكررة
+ * - ينظّف النص (شرطات التقطيع، المسافات، محارف الاتجاه)
+ * - لو الصفحة ممسوحة ضوئيًا (نص شبه معدوم) يرسمها كصورة عشان يقراها الذكاء الاصطناعي
+ * بيرجع { text, images, pages, scannedPages }
+ */
 async function extractFromPdf(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const buf = await readFileAsArrayBuffer(file);
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  let fullText = '';
   const maxPages = Math.min(pdf.numPages, 60);
+  const MAX_SCAN_IMAGES = 8;
+
+  const pageLines = [];
+  const scannedIdx = [];
+  const pageRefs = [];
+
   for (let i = 1; i <= maxPages; i++) {
     const page = await pdf.getPage(i);
+    pageRefs.push(page);
     const content = await page.getTextContent();
-    fullText += content.items.map(it => it.str).join(' ') + '\n\n';
+    const lines = pdfItemsToLines(content.items);
+    const charCount = lines.join('').replace(/\s/g, '').length;
+    if (charCount < 25) scannedIdx.push(i - 1);
+    pageLines.push(lines);
+    if (i % 5 === 0) showLoading('جاري استخراج النص من ملف PDF...', `صفحة ${i} من ${maxPages}`);
   }
+
+  const cleanedPages = stripRepeatedLines(pageLines);
+  const text = cleanExtractedText(
+    cleanedPages
+      .map((lines, idx) => (lines.length ? `[صفحة ${idx + 1}]\n` + lines.join('\n') : ''))
+      .filter(Boolean)
+      .join('\n\n')
+  );
+
+  const images = [];
+  if (scannedIdx.length) {
+    const take = scannedIdx.slice(0, MAX_SCAN_IMAGES);
+    for (let n = 0; n < take.length; n++) {
+      showLoading('الملف فيه صفحات ممسوحة ضوئيًا...', `بنحوّل صفحة ${take[n] + 1} لصورة (${n + 1}/${take.length})`);
+      try { images.push(await renderPdfPageToImage(pageRefs[take[n]])); } catch (e) { /* تجاهل الصفحة دي */ }
+    }
+  }
+
   if (pdf.numPages > maxPages) {
     toast(`الملف فيه ${pdf.numPages} صفحة، واتاخد منه أول ${maxPages} صفحة بس عشان الحجم. لو محتاج الملف كله، قسّمه وارفعه على دفعات.`, 'warn');
   }
-  return fullText.trim();
+
+  return { text, images, pages: maxPages, scannedPages: scannedIdx.length };
 }
+
 
 /* --- صورة: تحويل base64 لإرسالها لـ Gemini Vision --- */
 function readFileAsBase64(file) {
