@@ -2800,6 +2800,7 @@ ${opts.identityRef ? IDENTITY_REF_COLOR_INSTRUCTION(opts.identityRef) : opts.des
 - اتجاه الصفحة (RTL أو LTR) ونظام الأرقام في كل العناصر (lang/dir على <html> والترقيم) لازم يكونا متوافقين تمامًا مع لغة المحتوى الفعلية المكتشفة — راجع قسم "لغة المحتوى الناتج" أعلاه (مش RTL/أرقام عربية-هندية إجباريًا).
 ${PRINT_QUALITY_SECTION}
 ${DESIGN_EXCELLENCE_SECTION}
+${CONTENT_BALANCE_SECTION}
 ${opts.identityRef && opts.identityRef.type === 'html' ? `\n## مرجع الهوية البصرية (كود HTML/CSS من ملف قديم — انسخ الهوية منه بدقة)\nفيما يلي أنماط CSS وعيّنة من بنية HTML مأخوذة من ملف قديم، وهي المرجع الإلزامي الوحيد لهوية هذا الملف البصرية (الألوان، الخطوط، أشكال الصناديق، التعداد النقطي، الترويسة...). لا تخترع هوية بديلة، والتزم بنفس روح متغيرات CSS والخطوط الظاهرة هنا بقدر الإمكان (مع تعديل بسيط للتباين لو احتاج الأمر فقط):\n\`\`\`\n${escapeForPromptCodeBlock(opts.identityRef.styleText)}\n\`\`\`\n` : ''}
 ${layoutSection}
 
@@ -2951,6 +2952,7 @@ ${opts.identityRef ? IDENTITY_REF_COLOR_INSTRUCTION(opts.identityRef) : '- نظ�
 - زر عائم صغير "💾 حفظ كـ PDF" يستدعي window.print()، يختفي في @media print.
 ${PRINT_QUALITY_SECTION}
 ${DESIGN_EXCELLENCE_SECTION}
+${CONTENT_BALANCE_SECTION}
 - نظام الأرقام (عربية-هندية أو عادية) يتبع لغة المحتوى المكتشفة، زي ما هو موضّح في قسم "لغة المحتوى الناتج".
 - لو المحتوى فيه فكرة مركزية واحدة تستفيد فعليًا من تمثيل بصري (عملية قصيرة، تسلسل زمني بسيط، مقارنة بين مفهومين، تركيب بسيط)، أضف رسم توضيحي واحد بصيغة SVG خام مضمّن (viewBox مناسب، ألوان من نفس لوحة الملف، تسميات بنفس لغة المحتوى) — من غير ما تثقل الصفحة الواحدة بأكتر من رسم أو رسمين كحد أقصى.
 ${extras.length ? '\n## تعليمات إضافية\n' + extras.join('\n') : ''}
