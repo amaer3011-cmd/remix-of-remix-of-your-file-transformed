@@ -17,11 +17,11 @@ const HTML = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>الصفحة غير موجودة (404) — StudyMate</title>
-  <meta name="description" content="لم نعثر على الصفحة المطلوبة في StudyMate. ارجع للصفحة السابقة أو تصفّح أقسام إنشاء الاختبارات والشرح والملخصات والمكتبة." />
+  <title>الصفحة غير موجودة (404) — Thanawiyah🎯</title>
+  <meta name="description" content="لم نعثر على الصفحة المطلوبة في Thanawiyah🎯. ارجع للصفحة السابقة أو تصفّح أقسام إنشاء الاختبارات والشرح والملخصات والمكتبة." />
   <meta name="robots" content="noindex, follow" />
-  <meta property="og:title" content="الصفحة غير موجودة (404) — StudyMate" />
-  <meta property="og:description" content="لم نعثر على الصفحة المطلوبة في StudyMate. ارجع للصفحة السابقة أو تصفّح أقسام الموقع." />
+  <meta property="og:title" content="الصفحة غير موجودة (404) — Thanawiyah🎯" />
+  <meta property="og:description" content="لم نعثر على الصفحة المطلوبة في Thanawiyah🎯. ارجع للصفحة السابقة أو تصفّح أقسام الموقع." />
   <meta property="og:type" content="website" />
   <style>
     * { box-sizing: border-box; margin: 0; }
@@ -66,7 +66,7 @@ const HTML = `<!DOCTYPE html>
   <main>
     <p class="code">404</p>
     <h1>الصفحة غير موجودة</h1>
-    <p class="lead">يبدو أن الرابط الذي فتحته غير صحيح أو تم نقل الصفحة. يمكنك العودة للصفحة السابقة أو الانتقال مباشرة إلى أحد أقسام StudyMate بالأسفل.</p>
+    <p class="lead">يبدو أن الرابط الذي فتحته غير صحيح أو تم نقل الصفحة. يمكنك العودة للصفحة السابقة أو الانتقال مباشرة إلى أحد أقسام Thanawiyah🎯 بالأسفل.</p>
     <div class="actions">
       <button type="button" class="btn btn-outline" onclick="history.back()">رجوع للصفحة السابقة</button>
       <a class="btn btn-primary" href="/">الذهاب للصفحة الرئيسية</a>

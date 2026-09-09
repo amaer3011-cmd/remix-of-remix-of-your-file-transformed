@@ -21,7 +21,7 @@ export function NotFoundPage() {
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           يبدو أن الرابط الذي فتحته غير صحيح أو تم نقل الصفحة. يمكنك العودة
-          للصفحة السابقة أو الانتقال مباشرة إلى أحد أقسام StudyMate بالأسفل.
+          للصفحة السابقة أو الانتقال مباشرة إلى أحد أقسام Thanawiyah🎯 بالأسفل.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -65,18 +65,18 @@ export function NotFoundPage() {
 }
 
 export const notFoundMeta = [
-  { title: "الصفحة غير موجودة (404) — StudyMate" },
+  { title: "الصفحة غير موجودة (404) — Thanawiyah🎯" },
   {
     name: "description",
     content:
-      "لم نعثر على الصفحة المطلوبة في StudyMate. ارجع للصفحة السابقة أو تصفّح أقسام إنشاء الاختبارات والشرح والملخصات والمكتبة.",
+      "لم نعثر على الصفحة المطلوبة في Thanawiyah🎯. ارجع للصفحة السابقة أو تصفّح أقسام إنشاء الاختبارات والشرح والملخصات والمكتبة.",
   },
   { name: "robots", content: "noindex, follow" },
-  { property: "og:title", content: "الصفحة غير موجودة (404) — StudyMate" },
+  { property: "og:title", content: "الصفحة غير موجودة (404) — Thanawiyah🎯" },
   {
     property: "og:description",
     content:
-      "لم نعثر على الصفحة المطلوبة في StudyMate. ارجع للصفحة السابقة أو تصفّح أقسام الموقع.",
+      "لم نعثر على الصفحة المطلوبة في Thanawiyah🎯. ارجع للصفحة السابقة أو تصفّح أقسام الموقع.",
   },
   { property: "og:type", content: "website" },
   { name: "twitter:card", content: "summary_large_image" },
