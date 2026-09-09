@@ -743,8 +743,8 @@ html,body{overflow-x:hidden}
       <div class="src-panel" data-panel="image">
         <div class="dropzone" id="dz-image">
           <div class="dropzone-icon">🖼</div>
-          <div class="dropzone-text">اسحب صورة أو أكتر هنا أو اضغط للاختيار</div>
-          <div class="dropzone-sub">صور سبورة، كتاب، أو ملخص مكتوب بخط اليد</div>
+          <div class="dropzone-text">اسحب صورك هنا أو اضغط للاختيار — يدعم أكتر من 10 صور</div>
+          <div class="dropzone-sub">صور سبورة، كتاب، أو مذكرة بخط اليد — بنقرا كل صورة ونستخرج المحتوى العلمي كامل ونرتبه (لحد 40 صورة)</div>
         </div>
         <input type="file" id="file-image" accept="image/*" multiple class="hidden">
         <div id="chips-image"></div>
@@ -2078,7 +2078,7 @@ async function fetchYoutubeTranscriptCached(videoId) {
 const _organizeCache = new Map();
 
 const ORGANIZE_MIN_CHARS = 400;
-const ORGANIZE_MAX_CHARS = 60000;
+const ORGANIZE_MAX_CHARS = 120000;
 
 async function organizeContent(rawText, title) {
   const text = cleanExtractedText(rawText);
@@ -2235,8 +2235,10 @@ async function computeRoughContentSize() {
       note = ' (تقديري من حجم الملف، هيتحدد بدقة بعد الاستخراج)';
     }
   } else if (src === 'image') {
-    imageTokens = State.files.image.length * 258;
-    if (State.files.image.length) note = ' (تقدير تقريبي لكل صورة)';
+    const n = Math.min(State.files.image.length, MAX_IMAGES);
+    imageTokens = n * 258;
+    if (n > 3) { chars = n * 1800; note = ' (شامل خطوة قراءة الصور واستخراج المحتوى منها)'; }
+    else if (n) note = ' (تقدير تقريبي لكل صورة)';
   }
   return { chars, imageTokens, note };
 }
