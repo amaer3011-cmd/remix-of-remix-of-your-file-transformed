@@ -1878,6 +1878,124 @@ function readFileAsBase64(file) {
   });
 }
 
+/* =========================================================
+   استخراج المحتوى العلمي من الصور (OCR بالذكاء الاصطناعي)
+   بيدعم عدد كبير من الصور (لحد 40 صورة) عن طريق:
+   1) تصغير كل صورة قبل الإرسال عشان الحجم والسرعة
+   2) تقسيم الصور على دفعات صغيرة (4 صور لكل طلب) بدل طلب واحد ضخم
+   3) قراءة كل صورة نصًا كاملًا (نصوص + معادلات + جداول + وصف الرسوم)
+   4) دمج الناتج ثم تنظيمه في بنية مرتبة قبل توليد ملف الشرح
+   ========================================================= */
+const MAX_IMAGES = 40;
+const IMAGE_OCR_BATCH = 4;
+const IMAGE_MAX_DIM = 1600;
+
+/* تصغير الصورة وتحويلها base64 (يحسّن دقة الاستخراج ويقلل الحجم) */
+function downscaleImageToBase64(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, IMAGE_MAX_DIM / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        URL.revokeObjectURL(url);
+        resolve({ mimeType: 'image/jpeg', data: dataUrl.split(',')[1] });
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+async function prepareImagesForAI(files) {
+  const out = [];
+  for (const f of files) {
+    let img = null;
+    try { img = await downscaleImageToBase64(f); } catch (e) { img = null; }
+    if (!img) {
+      try { img = { mimeType: f.type || 'image/jpeg', data: await readFileAsBase64(f) }; } catch (e) { img = null; }
+    }
+    if (img) out.push(img);
+  }
+  return out;
+}
+
+const IMAGE_OCR_PROMPT = `أنت خبير في قراءة المحتوى التعليمي من الصور (سبورة، كتاب مدرسي، مذكرة، سكرين شوت، صور ممسوحة ضوئيًا).
+
+## المطلوب
+استخرج **كل** المحتوى العلمي الموجود في الصور المرفقة، صورة صورة بالترتيب، بدقة كاملة.
+
+## قواعد إلزامية
+- انسخ كل النصوص المكتوبة كما هي حرفيًا (مطبوعة أو بخط اليد)، من غير حذف أي معلومة ومن غير تلخيص.
+- المعادلات والرموز الرياضية/الكيميائية اكتبها LaTeX بين علامتي $ (مثال: $x^2+y^2=r^2$).
+- الجداول أعد كتابتها كجداول Markdown كاملة بكل خلاياها.
+- الرسوم والأشكال والمخططات: اكتب وصفًا علميًا دقيقًا لها (المحاور، البيانات، العناصر، العلاقات) داخل سطر يبدأ بـ "**شكل:**".
+- لو فيه كلمة غير واضحة اكتب أقرب قراءة منطقية لها وضع بعدها (؟).
+- لا تخترع أي معلومة غير موجودة في الصورة إطلاقًا.
+- التزم بلغة الصورة نفسها (عربي يفضل عربي، إنجليزي يفضل إنجليزي).
+- تجاهل العناصر غير التعليمية: أرقام الصفحات، الترويسات المتكررة، اللوجوهات، الإعلانات، أرقام التليفونات.
+- لو الصورة مالهاش أي محتوى تعليمي، اكتب تحت عنوانها: (لا يوجد محتوى علمي).
+
+## صيغة الرد
+لكل صورة اكتب عنوان بالشكل ده ثم محتواها:
+### صورة رقم N
+(المحتوى المستخرج بترتيبه الأصلي في الصورة، بعناوين فرعية ونقاط زي ما هي)
+
+أخرج المحتوى المستخرج فقط، بدون أي مقدمة أو تعليق منك.`;
+
+/* استخراج نص كل الصور على دفعات + كاش حسب هوية الملفات */
+async function extractTextFromImages(files) {
+  const key = 'images:' + files.map(fileIdentity).join('|');
+  if (State.extractionCache.key === key && State.extractionCache.text) {
+    return State.extractionCache.text;
+  }
+
+  const total = files.length;
+  const chunks = [];
+  let index = 0;
+
+  for (let i = 0; i < total; i += IMAGE_OCR_BATCH) {
+    const slice = files.slice(i, i + IMAGE_OCR_BATCH);
+    showLoading(
+      'جاري قراءة المحتوى من الصور...',
+      `بنستخرج النص والمعادلات من الصور (${Math.min(i + slice.length, total)} من ${total})`
+    );
+    const imgs = await prepareImagesForAI(slice);
+    if (!imgs.length) continue;
+
+    const startNo = index + 1;
+    const parts = [{
+      text: `${IMAGE_OCR_PROMPT}\n\nعدد الصور في هذه الدفعة: ${imgs.length}. رقّمها بدءًا من "صورة رقم ${startNo}" بالترتيب.`
+    }];
+    imgs.forEach(img => parts.push({ inline_data: { mime_type: img.mimeType, data: img.data } }));
+
+    try {
+      const out = await callGeminiAPI({ contents: [{ role: 'user', parts }] });
+      const cleaned = String(out || '').replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim();
+      if (cleaned) chunks.push(cleaned);
+    } catch (e) {
+      toast(`تعذّر قراءة دفعة صور (${startNo}-${startNo + imgs.length - 1})، وكمّلنا بالباقي.`, 'warn');
+    }
+    index += imgs.length;
+  }
+
+  const text = chunks.join('\n\n');
+  if (text) State.extractionCache = { key, text };
+  return text;
+}
+
 /* --- يوتيوب: استخراج الـ video id وجلب الترانسكريبت --- */
 function extractYoutubeId(url) {
   const patterns = [
