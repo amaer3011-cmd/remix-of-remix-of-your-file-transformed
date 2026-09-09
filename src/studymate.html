@@ -2155,14 +2155,29 @@ async function buildSourcePayload() {
 
   if (src === 'image') {
     if (!State.files.image.length) throw new Error('من فضلك ارفع صورة واحدة على الأقل.');
-    showLoading('جاري تجهيز الصور...', '');
-    const images = [];
-    for (const f of State.files.image) {
-      const b64 = await readFileAsBase64(f);
-      images.push({ mimeType: f.type || 'image/jpeg', data: b64 });
+    let files = State.files.image;
+    if (files.length > MAX_IMAGES) {
+      toast(`الحد الأقصى ${MAX_IMAGES} صورة في المرة الواحدة، واتاخد أول ${MAX_IMAGES} صورة.`, 'warn');
+      files = files.slice(0, MAX_IMAGES);
     }
-    return { kind: 'image', title: 'صور مرفوعة', text: '', images };
+
+    // صور قليلة: نبعتها كما هي للموديل مباشرة (أسرع وبيحافظ على التفاصيل البصرية)
+    if (files.length <= 3) {
+      showLoading('جاري تجهيز الصور...', '');
+      const images = await prepareImagesForAI(files);
+      if (!images.length) throw new Error('مقدرتش أقرأ الصور المرفوعة، جرّب صور تانية.');
+      return { kind: 'image', title: 'صور مرفوعة', text: '', images };
+    }
+
+    // عدد كبير من الصور: نستخرج المحتوى نصًا على دفعات ثم ننظّمه
+    const raw = await extractTextFromImages(files);
+    if (!raw || raw.length < 40) {
+      throw new Error('مقدرتش أستخرج محتوى علمي من الصور دي. اتأكد إن الصور واضحة وحاول تاني.');
+    }
+    const organized = await organizeContent(raw, `محتوى من ${files.length} صورة`);
+    return { kind: 'image', title: `محتوى من ${files.length} صورة`, text: organized, images: [] };
   }
+
 
   if (src === 'youtube') {
     const url = $('#ytInput').value.trim();
