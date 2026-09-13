@@ -1023,6 +1023,7 @@ html,body{overflow-x:hidden}
         <div class="result-sub" id="resultSub"></div>
         <div class="result-actions">
           <button class="btn-chip primary" id="retakeBtn">🔁 إعادة الاختبار</button>
+          <button class="btn-chip" id="retryWrongBtn">🎯 مراجعة الأسئلة الغلط</button>
           <button class="btn-chip" id="downloadQuizBtn">⬇️ تحميل للطباعة</button>
           <button class="btn-chip" id="downloadQuizInteractiveBtn">🧩 تحميل تفاعلي (HTML)</button>
           <button class="btn-chip" id="newQuizBtn">➕ اختبار جديد</button>
@@ -1112,13 +1113,35 @@ html,body{overflow-x:hidden}
 
   <!-- ============ LIBRARY VIEW ============ -->
   <section id="libraryView" class="view">
-    <div class="card-title" style="font-family:'Cairo',sans-serif;font-size:22px;margin-bottom:18px">📚 مكتبتي</div>
+    <div class="card-title" style="font-family:'Cairo',sans-serif;font-size:22px;margin-bottom:14px">📚 مكتبتي</div>
+    <div id="libToolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
+      <input id="libSearch" type="search" placeholder="🔎 ابحث بالعنوان…"
+        style="flex:1 1 220px;min-width:180px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+      <select id="libKind" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+        <option value="all">كل الأنواع</option>
+        <option value="quiz">📝 اختبارات</option>
+        <option value="explain">📖 ملفات شرح</option>
+        <option value="summary">📌 ملخصات</option>
+      </select>
+      <select id="libSort" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+        <option value="new">الأحدث أولًا</option>
+        <option value="old">الأقدم أولًا</option>
+        <option value="title">حسب العنوان</option>
+        <option value="score">الأعلى نتيجة</option>
+      </select>
+    </div>
+    <div id="libSummary" class="hint" style="margin-bottom:12px"></div>
     <div id="libGrid" class="lib-grid"></div>
     <div id="libEmpty" class="lib-empty hidden">
       <div class="lib-empty-icon">📭</div>
       <div>لسه مفيش اختبارات أو ملفات شرح محفوظة. ابدأ بإنشاء أول عنصر!</div>
     </div>
+    <div id="libNoResults" class="lib-empty hidden">
+      <div class="lib-empty-icon">🔍</div>
+      <div>مفيش نتائج مطابقة للبحث أو الفلتر ده.</div>
+    </div>
   </section>
+
 
   <footer class="foot">صُنع بواسطة Thanawiyah🎯 · المحتوى يُولّد بالذكاء الاصطناعي فراجع دايمًا المصدر الأصلي</footer>
 </div>
@@ -2524,27 +2547,52 @@ function buildGeminiErrorMessage(status) {
  */
 async function callGeminiAPI(body, { loadingMsgs, emptyMsg } = {}) {
   if (loadingMsgs) showLoading(loadingMsgs.title, loadingMsgs.sub);
-  let res;
-  try {
-    res = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  } catch (e) {
-    throw new Error('تعذّر الاتصال بالخادم. اتأكد من الإنترنت وحاول تاني.');
+
+  const MAX_ATTEMPTS = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res = null;
+    let networkFail = false;
+    try {
+      res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch (e) {
+      networkFail = true;
+      lastError = new Error('تعذّر الاتصال بالخادم. اتأكد من الإنترنت وحاول تاني.');
+    }
+
+    if (!networkFail) {
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+
+      if (res.ok && data && data.text) {
+        const text = String(data.text);
+        if (!text.trim()) {
+          throw new Error(emptyMsg || 'لم يتم استلام رد صالح من الذكاء الاصطناعي. حاول مرة أخرى.');
+        }
+        return text;
+      }
+
+      lastError = new Error((data && data.error) || 'تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
+      // 4xx غير قابلة لإعادة المحاولة (طلب غير صالح) — نوقف فورًا
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) throw lastError;
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      if (loadingMsgs) {
+        showLoading(loadingMsgs.title, `الخدمة مزدحمة شوية… بنعيد المحاولة تلقائيًا (${attempt + 1}/${MAX_ATTEMPTS})`);
+      }
+      await new Promise(r => setTimeout(r, 1200 * attempt));
+    }
   }
 
-  let data = null;
-  try { data = await res.json(); } catch (e) { data = null; }
-
-  if (!res.ok || !data || !data.text) {
-    throw new Error((data && data.error) || 'تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
-  }
-  const text = String(data.text);
-  if (!text.trim()) throw new Error(emptyMsg || 'لم يتم استلام رد صالح من الذكاء الاصطناعي. حاول مرة أخرى.');
-  return text;
+  throw lastError || new Error('تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
 }
+
 
 /* تنظيف رد HTML من الموديل: إزالة أي code fences وتقديم النص لو فيه سطور زيادة قبل <!doctype> */
 function cleanHtmlResponse(text, { errorMsg } = {}) {
@@ -4674,7 +4722,25 @@ function renderResult(quiz, answers, correct, total, pct) {
   $('#resultTitle').textContent = pct >= 85 ? 'أداء ممتاز! 🎉' : pct >= 60 ? 'أداء كويس، فيه مجال تتحسن 💪' : 'محتاج تراجع الموضوع تاني 📖';
   $('#resultSub').textContent = `إجبت صح على ${correct} من ${total} سؤال`;
 
+  // الأسئلة الغلط (أو اللي مجاوبهاش) — عشان زر مراجعة الغلط بس
+  const wrongQs = quiz.questions.filter((q, i) => answers[i] !== q.correct_index);
+  State.wrongQuiz = wrongQs.length
+    ? {
+        id: quiz.id + ':wrong',
+        title: 'مراجعة الغلط — ' + (quiz.title || 'اختبار'),
+        difficulty: quiz.difficulty,
+        sourceKind: quiz.sourceKind,
+        questions: wrongQs
+      }
+    : null;
+  const retryWrongBtn = $('#retryWrongBtn');
+  if (retryWrongBtn) {
+    retryWrongBtn.classList.toggle('hidden', !State.wrongQuiz);
+    if (State.wrongQuiz) retryWrongBtn.textContent = `🎯 مراجعة الأسئلة الغلط (${wrongQs.length})`;
+  }
+
   const list = $('#reviewList');
+
   list.innerHTML = '';
   const letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
   quiz.questions.forEach((q, i) => {
@@ -5207,6 +5273,9 @@ $('#downloadQuizInteractiveBtn').addEventListener('click', () => {
 
 
 $('#retakeBtn').addEventListener('click', () => startQuiz(State.quiz));
+$('#retryWrongBtn').addEventListener('click', () => {
+  if (State.wrongQuiz) startQuiz(State.wrongQuiz);
+});
 
 /* ---------- اختصارات لوحة المفاتيح أثناء حل الاختبار ---------- */
 document.addEventListener('keydown', (e) => {
@@ -5237,13 +5306,53 @@ window.addEventListener('beforeunload', () => {
    ========================================================= */
 const KIND_LABEL = { text: '📝 نص', html: '📄 HTML', pdf: '📕 PDF', image: '🖼 صورة', youtube: '▶️ يوتيوب' };
 
+function entryKindGroup(entry) {
+  if (entry.kind === 'explain') return 'explain';
+  if (entry.kind === 'summary') return 'summary';
+  return 'quiz';
+}
+
 function renderLibrary() {
-  const lib = Store.getLibrary();
+  const all = Store.getLibrary();
   const grid = $('#libGrid');
   grid.innerHTML = '';
-  $('#libEmpty').classList.toggle('hidden', lib.length > 0);
+  $('#libEmpty').classList.toggle('hidden', all.length > 0);
+  $('#libToolbar').classList.toggle('hidden', all.length === 0);
+
+  const term = ($('#libSearch')?.value || '').trim().toLowerCase();
+  const kind = $('#libKind')?.value || 'all';
+  const sort = $('#libSort')?.value || 'new';
+
+  let lib = all.filter(e => {
+    if (kind !== 'all' && entryKindGroup(e) !== kind) return false;
+    if (term && !String(e.title || '').toLowerCase().includes(term)) return false;
+    return true;
+  });
+
+  lib = lib.slice().sort((a, b) => {
+    if (sort === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
+    if (sort === 'title') return String(a.title || '').localeCompare(String(b.title || ''), 'ar');
+    if (sort === 'score') return ((b.lastScore && b.lastScore.pct) || -1) - ((a.lastScore && a.lastScore.pct) || -1);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  const quizzes = all.filter(e => entryKindGroup(e) === 'quiz');
+  const solved = quizzes.filter(e => e.lastScore);
+  const avg = solved.length
+    ? Math.round(solved.reduce((s, e) => s + (e.lastScore.pct || 0), 0) / solved.length)
+    : null;
+  const summary = $('#libSummary');
+  if (summary) {
+    summary.textContent = all.length
+      ? `إجمالي ${all.length} عنصر · ${quizzes.length} اختبار · ${all.length - quizzes.length} ملف شرح/ملخص`
+        + (avg !== null ? ` · متوسط نتائجك ${avg}%` : '')
+        + (lib.length !== all.length ? ` · ظاهر الآن ${lib.length}` : '')
+      : '';
+  }
+  $('#libNoResults').classList.toggle('hidden', !(all.length > 0 && lib.length === 0));
 
   lib.forEach(entry => {
+
     const isExplain = entry.kind === 'explain';
     const isSummary = entry.kind === 'summary';
     const isDoc = isExplain || isSummary;
@@ -5306,10 +5415,16 @@ function renderLibrary() {
   });
 }
 
+['#libSearch', '#libKind', '#libSort'].forEach(sel => {
+  const el = $(sel);
+  if (el) el.addEventListener('input', renderLibrary);
+});
+
 /* =========================================================
    تهيئة أولية
    ========================================================= */
 updateCostEstimate();
+
 
 </script>
 </body>
