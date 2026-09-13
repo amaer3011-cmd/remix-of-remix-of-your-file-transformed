@@ -1112,13 +1112,35 @@ html,body{overflow-x:hidden}
 
   <!-- ============ LIBRARY VIEW ============ -->
   <section id="libraryView" class="view">
-    <div class="card-title" style="font-family:'Cairo',sans-serif;font-size:22px;margin-bottom:18px">📚 مكتبتي</div>
+    <div class="card-title" style="font-family:'Cairo',sans-serif;font-size:22px;margin-bottom:14px">📚 مكتبتي</div>
+    <div id="libToolbar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
+      <input id="libSearch" type="search" placeholder="🔎 ابحث بالعنوان…"
+        style="flex:1 1 220px;min-width:180px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+      <select id="libKind" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+        <option value="all">كل الأنواع</option>
+        <option value="quiz">📝 اختبارات</option>
+        <option value="explain">📖 ملفات شرح</option>
+        <option value="summary">📌 ملخصات</option>
+      </select>
+      <select id="libSort" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font-family:'Cairo',sans-serif;font-size:14px">
+        <option value="new">الأحدث أولًا</option>
+        <option value="old">الأقدم أولًا</option>
+        <option value="title">حسب العنوان</option>
+        <option value="score">الأعلى نتيجة</option>
+      </select>
+    </div>
+    <div id="libSummary" class="hint" style="margin-bottom:12px"></div>
     <div id="libGrid" class="lib-grid"></div>
     <div id="libEmpty" class="lib-empty hidden">
       <div class="lib-empty-icon">📭</div>
       <div>لسه مفيش اختبارات أو ملفات شرح محفوظة. ابدأ بإنشاء أول عنصر!</div>
     </div>
+    <div id="libNoResults" class="lib-empty hidden">
+      <div class="lib-empty-icon">🔍</div>
+      <div>مفيش نتائج مطابقة للبحث أو الفلتر ده.</div>
+    </div>
   </section>
+
 
   <footer class="foot">صُنع بواسطة Thanawiyah🎯 · المحتوى يُولّد بالذكاء الاصطناعي فراجع دايمًا المصدر الأصلي</footer>
 </div>
