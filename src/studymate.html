@@ -5273,6 +5273,9 @@ $('#downloadQuizInteractiveBtn').addEventListener('click', () => {
 
 
 $('#retakeBtn').addEventListener('click', () => startQuiz(State.quiz));
+$('#retryWrongBtn').addEventListener('click', () => {
+  if (State.wrongQuiz) startQuiz(State.wrongQuiz);
+});
 
 /* ---------- اختصارات لوحة المفاتيح أثناء حل الاختبار ---------- */
 document.addEventListener('keydown', (e) => {
