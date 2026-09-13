@@ -5393,10 +5393,16 @@ function renderLibrary() {
   });
 }
 
+['#libSearch', '#libKind', '#libSort'].forEach(sel => {
+  const el = $(sel);
+  if (el) el.addEventListener('input', renderLibrary);
+});
+
 /* =========================================================
    تهيئة أولية
    ========================================================= */
 updateCostEstimate();
+
 
 </script>
 </body>
