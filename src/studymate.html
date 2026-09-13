@@ -2524,27 +2524,52 @@ function buildGeminiErrorMessage(status) {
  */
 async function callGeminiAPI(body, { loadingMsgs, emptyMsg } = {}) {
   if (loadingMsgs) showLoading(loadingMsgs.title, loadingMsgs.sub);
-  let res;
-  try {
-    res = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  } catch (e) {
-    throw new Error('تعذّر الاتصال بالخادم. اتأكد من الإنترنت وحاول تاني.');
+
+  const MAX_ATTEMPTS = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res = null;
+    let networkFail = false;
+    try {
+      res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch (e) {
+      networkFail = true;
+      lastError = new Error('تعذّر الاتصال بالخادم. اتأكد من الإنترنت وحاول تاني.');
+    }
+
+    if (!networkFail) {
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+
+      if (res.ok && data && data.text) {
+        const text = String(data.text);
+        if (!text.trim()) {
+          throw new Error(emptyMsg || 'لم يتم استلام رد صالح من الذكاء الاصطناعي. حاول مرة أخرى.');
+        }
+        return text;
+      }
+
+      lastError = new Error((data && data.error) || 'تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
+      // 4xx غير قابلة لإعادة المحاولة (طلب غير صالح) — نوقف فورًا
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) throw lastError;
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      if (loadingMsgs) {
+        showLoading(loadingMsgs.title, `الخدمة مزدحمة شوية… بنعيد المحاولة تلقائيًا (${attempt + 1}/${MAX_ATTEMPTS})`);
+      }
+      await new Promise(r => setTimeout(r, 1200 * attempt));
+    }
   }
 
-  let data = null;
-  try { data = await res.json(); } catch (e) { data = null; }
-
-  if (!res.ok || !data || !data.text) {
-    throw new Error((data && data.error) || 'تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
-  }
-  const text = String(data.text);
-  if (!text.trim()) throw new Error(emptyMsg || 'لم يتم استلام رد صالح من الذكاء الاصطناعي. حاول مرة أخرى.');
-  return text;
+  throw lastError || new Error('تعذّر توليد المحتوى حاليًا. حاول مرة تانية.');
 }
+
 
 /* تنظيف رد HTML من الموديل: إزالة أي code fences وتقديم النص لو فيه سطور زيادة قبل <!doctype> */
 function cleanHtmlResponse(text, { errorMsg } = {}) {
