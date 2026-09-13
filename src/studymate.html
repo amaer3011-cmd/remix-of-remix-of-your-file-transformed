@@ -4722,7 +4722,25 @@ function renderResult(quiz, answers, correct, total, pct) {
   $('#resultTitle').textContent = pct >= 85 ? 'أداء ممتاز! 🎉' : pct >= 60 ? 'أداء كويس، فيه مجال تتحسن 💪' : 'محتاج تراجع الموضوع تاني 📖';
   $('#resultSub').textContent = `إجبت صح على ${correct} من ${total} سؤال`;
 
+  // الأسئلة الغلط (أو اللي مجاوبهاش) — عشان زر مراجعة الغلط بس
+  const wrongQs = quiz.questions.filter((q, i) => answers[i] !== q.correct_index);
+  State.wrongQuiz = wrongQs.length
+    ? {
+        id: quiz.id + ':wrong',
+        title: 'مراجعة الغلط — ' + (quiz.title || 'اختبار'),
+        difficulty: quiz.difficulty,
+        sourceKind: quiz.sourceKind,
+        questions: wrongQs
+      }
+    : null;
+  const retryWrongBtn = $('#retryWrongBtn');
+  if (retryWrongBtn) {
+    retryWrongBtn.classList.toggle('hidden', !State.wrongQuiz);
+    if (State.wrongQuiz) retryWrongBtn.textContent = `🎯 مراجعة الأسئلة الغلط (${wrongQs.length})`;
+  }
+
   const list = $('#reviewList');
+
   list.innerHTML = '';
   const letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
   quiz.questions.forEach((q, i) => {
