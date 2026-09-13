@@ -5284,13 +5284,53 @@ window.addEventListener('beforeunload', () => {
    ========================================================= */
 const KIND_LABEL = { text: '📝 نص', html: '📄 HTML', pdf: '📕 PDF', image: '🖼 صورة', youtube: '▶️ يوتيوب' };
 
+function entryKindGroup(entry) {
+  if (entry.kind === 'explain') return 'explain';
+  if (entry.kind === 'summary') return 'summary';
+  return 'quiz';
+}
+
 function renderLibrary() {
-  const lib = Store.getLibrary();
+  const all = Store.getLibrary();
   const grid = $('#libGrid');
   grid.innerHTML = '';
-  $('#libEmpty').classList.toggle('hidden', lib.length > 0);
+  $('#libEmpty').classList.toggle('hidden', all.length > 0);
+  $('#libToolbar').classList.toggle('hidden', all.length === 0);
+
+  const term = ($('#libSearch')?.value || '').trim().toLowerCase();
+  const kind = $('#libKind')?.value || 'all';
+  const sort = $('#libSort')?.value || 'new';
+
+  let lib = all.filter(e => {
+    if (kind !== 'all' && entryKindGroup(e) !== kind) return false;
+    if (term && !String(e.title || '').toLowerCase().includes(term)) return false;
+    return true;
+  });
+
+  lib = lib.slice().sort((a, b) => {
+    if (sort === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
+    if (sort === 'title') return String(a.title || '').localeCompare(String(b.title || ''), 'ar');
+    if (sort === 'score') return ((b.lastScore && b.lastScore.pct) || -1) - ((a.lastScore && a.lastScore.pct) || -1);
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  const quizzes = all.filter(e => entryKindGroup(e) === 'quiz');
+  const solved = quizzes.filter(e => e.lastScore);
+  const avg = solved.length
+    ? Math.round(solved.reduce((s, e) => s + (e.lastScore.pct || 0), 0) / solved.length)
+    : null;
+  const summary = $('#libSummary');
+  if (summary) {
+    summary.textContent = all.length
+      ? `إجمالي ${all.length} عنصر · ${quizzes.length} اختبار · ${all.length - quizzes.length} ملف شرح/ملخص`
+        + (avg !== null ? ` · متوسط نتائجك ${avg}%` : '')
+        + (lib.length !== all.length ? ` · ظاهر الآن ${lib.length}` : '')
+      : '';
+  }
+  $('#libNoResults').classList.toggle('hidden', !(all.length > 0 && lib.length === 0));
 
   lib.forEach(entry => {
+
     const isExplain = entry.kind === 'explain';
     const isSummary = entry.kind === 'summary';
     const isDoc = isExplain || isSummary;
