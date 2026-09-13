@@ -2101,7 +2101,55 @@ async function fetchYoutubeTranscriptCached(videoId) {
 const _organizeCache = new Map();
 
 const ORGANIZE_MIN_CHARS = 400;
-const ORGANIZE_MAX_CHARS = 120000;
+const ORGANIZE_MAX_CHARS = 300000;   // السقف الكلي للمحتوى اللي بنظّمه
+const ORGANIZE_CHUNK_CHARS = 26000;  // حجم الجزء الواحد في التنظيم على أجزاء
+
+/* تقسيم النص على أجزاء عند حدود الفقرات/السطور (مش في وسط كلمة أو جملة) */
+function splitTextForOrganize(text, maxChars) {
+  if (text.length <= maxChars) return [text];
+  const parts = [];
+  let i = 0;
+  while (i < text.length) {
+    let end = Math.min(i + maxChars, text.length);
+    if (end < text.length) {
+      const window = text.slice(i, end);
+      const cut = Math.max(
+        window.lastIndexOf('\n\n'),
+        window.lastIndexOf('\n'),
+        window.lastIndexOf('. '),
+        window.lastIndexOf('۔')
+      );
+      if (cut > maxChars * 0.5) end = i + cut + 1;
+    }
+    parts.push(text.slice(i, end).trim());
+    i = end;
+  }
+  return parts.filter(Boolean);
+}
+
+function organizePrompt(chunk, title, { index, total, tailContext }) {
+  const multi = total > 1;
+  return `أنت محرّر تعليمي محترف. المطلوب: إعادة تنظيم وترتيب المحتوى الخام التالي (مستخرج آليًا من ملف) قبل استخدامه في التوليد.
+
+## القواعد
+- لا تحذف أي معلومة تعليمية، ولا تضف أي معلومة من عندك إطلاقًا.
+- احذف فقط: أرقام الصفحات، الترويسة/التذييل المتكررة، الإعلانات، أرقام التليفونات، الكلام الإداري، الحشو والتكرار الحرفي.
+- أصلح تقطيع الكلمات والسطور الناتج عن الاستخراج الآلي، ورتّب الجمل المبعثرة في فقرات مفهومة.
+- رتّب المحتوى ترتيبًا منطقيًا: الموضوع ← المحاور ← التعريفات ← القوانين/القواعد ← الشروح ← الأمثلة ← الملاحظات.
+- كل محور يبدأ بعنوان \`##\` واضح، وكل مفهوم فرعي بعنوان \`###\`، والتعريفات في صيغة **المصطلح:** ثم التعريف.
+- القوانين والصيغ اجمعها تحت عنوان فرعي مستقل، والأمثلة تحت \`### مثال\` مع خطوات الحل مرقّمة.
+- المعلومات المتقابلة (مقارنات، خصائص، تصنيفات) حوّلها لجدول Markdown.
+- استخدم Markdown بسيط: \`#\` للعنوان الرئيسي، \`##\` للمحاور، \`###\` للعناوين الفرعية، \`-\` للنقاط.
+- المعادلات والرموز الرياضية اكتبها LaTeX بين علامتي $.
+- لو لقيت معلومة مكررة في أكتر من موضع، وحّدها في مكان واحد مناسب.
+- التزم بنفس لغة المصدر حرفيًا (لو المصدر إنجليزي خلّيه إنجليزي).
+- أخرج المحتوى المنظّم فقط بدون أي مقدمة أو تعليق منك.
+${multi ? `\n## ملاحظة مهمة\nده الجزء ${index + 1} من ${total} من نفس الملف. نظّم هذا الجزء فقط، ولا تكتب مقدمة عامة ولا خاتمة ولا عنوانًا رئيسيًا \`#\` جديدًا${index > 0 ? '، وكمّل من حيث انتهى الجزء السابق بدون تكرار ما فيه' : ''}.${tailContext ? `\n\n--- آخر ما تم تنظيمه في الجزء السابق (للسياق فقط، لا تعِد كتابته) ---\n${tailContext}` : ''}\n` : ''}
+عنوان المصدر: ${title || 'بدون عنوان'}
+
+--- المحتوى الخام ---
+${chunk}`;
+}
 
 async function organizeContent(rawText, title) {
   const text = cleanExtractedText(rawText);
@@ -2110,36 +2158,35 @@ async function organizeContent(rawText, title) {
   if (_organizeCache.has(key)) return _organizeCache.get(key);
 
   const input = text.length > ORGANIZE_MAX_CHARS ? text.slice(0, ORGANIZE_MAX_CHARS) : text;
-
-  const prompt = `أنت محرّر تعليمي محترف. المطلوب: إعادة تنظيم وترتيب المحتوى الخام التالي (مستخرج آليًا من ملف) قبل استخدامه في التوليد.
-
-## القواعد
-- لا تحذف أي معلومة تعليمية، ولا تضف أي معلومة من عندك إطلاقًا.
-- احذف فقط: أرقام الصفحات، الترويسة/التذييل المتكررة، الإعلانات، أرقام التليفونات، الكلام الإداري، الحشو والتكرار الحرفي.
-- أصلح تقطيع الكلمات والسطور الناتج عن الاستخراج الآلي، ورتّب الجمل المبعثرة في فقرات مفهومة.
-- رتّب المحتوى ترتيبًا منطقيًا: الموضوع ← المحاور ← التعريفات ← القوانين/القواعد ← الشروح ← الأمثلة ← الملاحظات.
-- استخدم Markdown بسيط: \`#\` للعنوان الرئيسي، \`##\` للمحاور، \`###\` للعناوين الفرعية، \`-\` للنقاط، وجداول Markdown لو المحتوى جدولي.
-- المعادلات والرموز الرياضية اكتبها LaTeX بين علامتي $.
-- التزم بنفس لغة المصدر حرفيًا (لو المصدر إنجليزي خلّيه إنجليزي).
-- أخرج المحتوى المنظّم فقط بدون أي مقدمة أو تعليق منك.
-
-عنوان المصدر: ${title || 'بدون عنوان'}
-
---- المحتوى الخام ---
-${input}`;
+  const chunks = splitTextForOrganize(input, ORGANIZE_CHUNK_CHARS);
 
   try {
-    showLoading('جاري تنظيم وترتيب المحتوى...', 'بنرتب المحتوى في بنية واضحة قبل التوليد');
-    const out = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
-    const organized = String(out || '').replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim();
-    // لو الناتج قصير بشكل مريب، ارجع للنص الأصلي عشان مانخسرش محتوى
-    const result = organized.length >= input.length * 0.35 ? organized : text;
+    const outParts = [];
+    let tailContext = '';
+    for (let i = 0; i < chunks.length; i++) {
+      showLoading(
+        'جاري تنظيم وترتيب المحتوى...',
+        chunks.length > 1
+          ? `بنرتب المحتوى في بنية واضحة قبل التوليد (${i + 1}/${chunks.length})`
+          : 'بنرتب المحتوى في بنية واضحة قبل التوليد'
+      );
+      const prompt = organizePrompt(chunks[i], title, { index: i, total: chunks.length, tailContext });
+      const out = await callGeminiAPI({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
+      const cleaned = String(out || '').replace(/^```(?:markdown|md)?\s*|\s*```$/g, '').trim();
+      // لو ناتج الجزء قصير بشكل مريب، استخدم الجزء الخام نفسه عشان مانخسرش محتوى
+      outParts.push(cleaned.length >= chunks[i].length * 0.3 ? cleaned : chunks[i]);
+      tailContext = outParts[i].slice(-600);
+    }
+
+    const organized = outParts.join('\n\n');
+    const result = organized.length >= input.length * 0.3 ? organized : text;
     _organizeCache.set(key, result);
     return result;
   } catch (e) {
     return text; // لو التنظيم فشل، كمّل بالنص الخام عادي
   }
 }
+
 
 async function buildSourcePayload() {
 
