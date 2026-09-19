@@ -3056,6 +3056,7 @@ ${opts.identityRef ? IDENTITY_REF_COLOR_INSTRUCTION(opts.identityRef) : opts.des
 ${PRINT_QUALITY_SECTION}
 ${DESIGN_EXCELLENCE_SECTION}
 ${CONTENT_BALANCE_SECTION}
+${PEDAGOGY_DEPTH_SECTION}
 ${opts.identityRef && opts.identityRef.type === 'html' ? `\n## مرجع الهوية البصرية (كود HTML/CSS من ملف قديم — انسخ الهوية منه بدقة)\nفيما يلي أنماط CSS وعيّنة من بنية HTML مأخوذة من ملف قديم، وهي المرجع الإلزامي الوحيد لهوية هذا الملف البصرية (الألوان، الخطوط، أشكال الصناديق، التعداد النقطي، الترويسة...). لا تخترع هوية بديلة، والتزم بنفس روح متغيرات CSS والخطوط الظاهرة هنا بقدر الإمكان (مع تعديل بسيط للتباين لو احتاج الأمر فقط):\n\`\`\`\n${escapeForPromptCodeBlock(opts.identityRef.styleText)}\n\`\`\`\n` : ''}
 ${layoutSection}
 
