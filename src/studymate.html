@@ -2657,7 +2657,9 @@ function cleanHtmlResponse(text, { errorMsg } = {}) {
 }
 
 async function callGemini(source, count, difficulty) {
-  const promptText = buildPrompt(source, count, difficulty);
+  // نطلب أسئلة أكتر من المطلوب عشان نفلتر ونختار أفضلها
+  const genCount = Math.min(count + Math.max(3, Math.ceil(count * 0.4)), count + 10);
+  const promptText = buildPrompt(source, count, difficulty, genCount);
   const parts = [{ text: promptText }];
   source.images.forEach(img => {
     parts.push({ inline_data: { mime_type: img.mimeType, data: img.data } });
